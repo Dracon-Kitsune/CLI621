@@ -95,6 +95,13 @@ module E621
           @config["tag_trash_hold"] = @config["tag_trash_hold"].to_i
           @config["threads"] = @config["threads"].to_i
           @config["cache_size"] = @config["cache_size"].to_i
+          dir = Array.new
+          File.expand_path(c["picture_path"]).split("/").each do |d|
+            # Create our working directory first!
+            dir += d
+            Dir.mkdir(dir.join("/")) unless File.exist?(dir.join("/"))
+            # If our directory does not exist, make it.
+          end
           Dir.chdir(File.expand_path(c["picture_path"])) # change working path
           @tag_trash  = @config["tag_trash_hold"]
           # Tags with a post count lower than this get ignored.
