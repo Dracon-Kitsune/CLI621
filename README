@@ -1,0 +1,15 @@
+CLI621
+
+CLI621 is an e621.net downloader for the command line interface. It accepts
+tasks and downloads requested content from e621.net. It is still in development
+and more features will be added soon.
+
+Usage
+  Just switch into bin/ and use ./post or make a symlink of bin/post into your
+  search path, like /usr/bin.
+
+Install
+  Just copy .e621/ into your home directory and put your user name and password
+  into passwd.json. There is no anonymous use possible at this moment.
+
+If you find any bugs, please mail them to maxine_red1@yahoo.com. Thank you!

@@ -1,0 +1,8 @@
+{
+  "picture_path":"~/pictures/e621",
+  "tag_trash_hold":30,
+  "prompt_color":"yellow",
+  "threads":10,
+  "cache":true,
+  "cache_size":500
+}
