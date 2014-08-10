@@ -10,6 +10,6 @@ Usage
 
 Install
   Just copy .e621/ into your home directory and put your user name and password
-  into passwd.json. There is no anonymous use possible at this moment.
+  into passwd.json. There is no anonymous login possible at this moment.
 
 If you find any bugs, please mail them to maxine_red1@yahoo.com. Thank you!
