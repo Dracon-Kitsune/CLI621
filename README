@@ -17,5 +17,12 @@ Versioning
   new features, MINOR updates add new features and are backwards compatible and
   MAJOR updates add new features, but are not backwards compatible.
 
+Planned changes for 0.2.0:
+  Versions get tagged for that and their own branch. That keeps Master for
+  unstable development.
+  Also, there will be a "CHANGE" file added, that keeps track of changes between
+  different versions. It is empty right now and will be filled on release of
+  version 0.2.0.
+
 If you find any bugs or have some suggestions, please mail them to
 maxine_red1@yahoo.com. Thank you!
