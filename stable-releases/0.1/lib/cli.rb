@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 =begin
   Copyright 2014 Maxine Red <maxine_red1@yahoo.com>
 
@@ -18,38 +17,16 @@
   along with CLI621.  If not, see <http://www.gnu.org/licenses/>.
 =end
 
-file = File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__
-$:.unshift(File.dirname(file)+"/../lib")
-require "main"
-require "cli"
-require "post/main"
-require "post/post"
-require "post/task"
+require "readline"
 
-=begin
-  Features provided:
-
-  +- Posts
-  |
-  +--+- show
-  |  +- vote
-  |  +- fav
-  |
-  +- Tasks
-  |
-  +--+- add/remove
-     +- update
-     +- download
-=end
-begin
-  debug  = ARGV.include?("-v") ? true : false # debug mode enabled?
-  e621   = E621::Main.new
-rescue => e
-  if debug then
-    raise
-  else
-    $stderr.puts "Program aborted! Reason is #$!."
+module E621
+  class CLI
+    attr_accessor :history
+    def initialize(h)
+      @history = File.open(h,"a+")
+      @history.read.split($/).each do |l|
+        Readline::HISTORY << l
+      end
+    end
   end
-ensure
-  puts # Always make a nice cleanup!
 end

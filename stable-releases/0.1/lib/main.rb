@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 =begin
   Copyright 2014 Maxine Red <maxine_red1@yahoo.com>
 
@@ -18,38 +17,31 @@
   along with CLI621.  If not, see <http://www.gnu.org/licenses/>.
 =end
 
-file = File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__
-$:.unshift(File.dirname(file)+"/../lib")
-require "main"
-require "cli"
-require "post/main"
-require "post/post"
-require "post/task"
-
-=begin
-  Features provided:
-
-  +- Posts
-  |
-  +--+- show
-  |  +- vote
-  |  +- fav
-  |
-  +- Tasks
-  |
-  +--+- add/remove
-     +- update
-     +- download
-=end
-begin
-  debug  = ARGV.include?("-v") ? true : false # debug mode enabled?
-  e621   = E621::Main.new
-rescue => e
-  if debug then
-    raise
-  else
-    $stderr.puts "Program aborted! Reason is #$!."
+module E621
+  # A global connect function for HTTPS connections.
+  def self.connect
+    http = Net::HTTP.new("e621.net",443)
+    http.use_ssl = true
+    return http
   end
-ensure
-  puts # Always make a nice cleanup!
+  # several helper functions to globalize variables
+  def self.debug=(d)
+    @@debug = d
+  end
+
+  def self.debug
+    @@debug
+  end
+
+  def self.error(id)
+    if $!.to_s.length < 128 then
+      $stderr.puts "Post ##{id} caused an error: #$!"
+    else
+      $!.to_s =~ /<pre>.+<\/pre>/
+      err = $~.to_s
+      err = err.gsub(/<pre>|<\/pre>/,"").gsub("&gt;",">").gsub("&lt;","<").gsub("&#39","'")
+      $stderr.puts "Post ##{id} caused a remote error: #{err}.","Aborting!"
+      abort
+    end
+  end
 end

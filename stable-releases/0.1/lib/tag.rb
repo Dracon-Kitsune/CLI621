@@ -17,17 +17,17 @@
   along with CLI621.  If not, see <http://www.gnu.org/licenses/>.
 =end
 
-class Blacklist < Tag
-  def initialize(e621)
-    super(e621)
-    @help = [
-      "list",
-      "add tag1 tag2 tag3 ...",
-      "remove tag1 tag2 tag3 ..."
-    ]
-  end
-
-  def list
-    $stdout.puts "These are all blacklisted tags:","#{CLI::BOLD}#{@e621.blacklist.join("#{CLI::NORMAL}, #{CLI::BOLD}")}#{CLI::NORMAL}".to_constr(@e621.termwidth,2)
+module E621
+  class Tag
+    attr_reader :type,:count,:id,:name
+    def initialize(tag)
+      if !tag.is_a?(Hash) && tag.is_a?(String) then
+        i = $tags.index{|t|t["name"]==tag}
+        tag = $tags[i] if i
+      elsif tag.is_a?(Hash) then
+      else raise ArgumentError
+      end
+      @type,@count,@id,@name = tag["type"].to_i,tag["count"].to_i,tag["id"].to_i,tag["name"] if tag
+    end
   end
 end

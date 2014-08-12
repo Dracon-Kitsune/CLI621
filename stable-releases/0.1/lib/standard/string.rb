@@ -24,11 +24,11 @@ class String
   def parse
     JSON.parser.new(self).parse
   end
-  # Remove all tags inside of a string.
+  
   def clean
     self.gsub(/<.+?>/,"")
   end
-  # Trim or expand a string to a certain length.
+
   def pad(c,s=" ")
     if self.length > c then
       self[0,c-3]+"..."
@@ -38,8 +38,7 @@ class String
       self
     end
   end
-  # Make a string bold and colorful, with colors a user can understand. Not
-  # those cryptic numbers.
+  
   def bold(color=nil)
     c = case color
     when "black"  then  "\e[30;1m"
@@ -53,7 +52,7 @@ class String
     end
     c+self+"\e[0m"
   end
-  # Same as bold, but just make a string colorful.
+
   def color(color=nil)
     c = case color
     when "black"  then  "\e[30;0m"
@@ -66,14 +65,5 @@ class String
     else                "\e[37;0m"
     end
     c+self+"\e[0m"
-  end
-  # It is just convenient to have a custom to_bool function. Only "true" gets
-  # turned into true, anything else is false.
-  def to_bool
-    if self.downcase == "true" then
-      true
-    else
-      false
-    end
   end
 end
