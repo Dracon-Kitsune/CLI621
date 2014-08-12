@@ -17,11 +17,6 @@ Versioning
   new features, MINOR updates add new features and are backwards compatible and
   MAJOR updates add new features, but are not backwards compatible.
 
-Known issues
-  There is a bug when you're using dash as your fallback shell 'sh', issue found
-  on Debian only currently. Please change 'sh' to point to bash, or passwor
-  input will not work.
-
 Branches
   Stable versions get their own branch now. Master will always be considered
   unstable and copied into a new branch, when a minor release is ready. Check

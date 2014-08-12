@@ -43,7 +43,7 @@ require "post/task"
 =end
 begin
   debug  = ARGV.include?("-v") ? true : false # debug mode enabled?
-  e621   = E621::Main.new
+  e621   = E621::Posts::Main.new
 rescue => e
   if debug then
     raise
