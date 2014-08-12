@@ -23,11 +23,8 @@ Known issues
   input will not work.
 
 Branches
-  Stable versions get their own branch now. Master will always be considered
-  unstable and copied into a new branch, when a minor release is ready. Check
-  out "stable-releases/" to find out about the newest version!
-  Stable means that it runs on the author's system smoothly and she did not find
-  any major bugs!
+  Master always contains stable releases. Where stable means that the author did
+  not find any major bugs in her testing.
 
 If you find any bugs or have some suggestions, please mail them to
 maxine_red1@yahoo.com. Thank you!
