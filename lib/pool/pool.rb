@@ -25,7 +25,7 @@ module E621
       http = E621.connect
       if pool.is_a?(Hash) then
         @id, @public, @name, @post_count = pool["id"], pool["is_public"], pool["name"], pool["post_count"]
-        @creator = http.post("/user/index.json","id=#{pool["user_id"]}").body.parse.first["name"]
+        @name.gsub!("_"," ")
       elsif pool.is_a?(Fixnum) then
       else raise ArgumentError, "Class #{pool.class} is not recognized in this context."
       end

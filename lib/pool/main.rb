@@ -39,25 +39,30 @@ module E621
 
     def list(buf)
       content = [
-        " Name".pad(36),
-        "Createor".pad(20),
+        " Name".pad(59),
         "Posts",
         "Public "
       ]
-      draw_box(content) do
-        pool,page,body = Array.new,1,[""]
-        until body == Array.new do
-          request = "query=#{buf.join(" ")}&page=#{page}"
-          body = @http.post("/pool/index.json",request).body.parse
+      page,body = 1,[""]
+      until body == Array.new do
+        request = "query=#{buf.join(" ")}&page=#{page}"
+        draw_box(content,page == 1 ? true : false) do
+          body = @http.post("/pool/index.json",request).body.parse if page == 1
           body.each do |pool|
             pool = Pool.new(pool)
-            puts "| #{pool.name.pad(35)} | #{pool.creator.pad(20)} | #{pool.post_count.pad(5," ")} | #{pool.public ? "Yes   ".bold("green") : "No    ".bold("yellow")} |"
+            puts "| #{pool.name.pad(58)} | #{pool.post_count.pad(5," ")} | #{pool.public ? "Yes   ".bold("green") : "No    ".bold("yellow")} |"
           end
-          page += 1
-          print "| "+"Request next page with carriage return.".pad(75)+" |"
-          $stdin.gets
         end
-        p pools.length
+        if body != Array.new then
+          page += 1
+          fetch_thread = Thread.new do 
+            body = @http.post("/pool/index.json",request).body.parse
+          end
+          print "Loading next page? [Y/n]"
+          input = $stdin.gets.to_s.chomp
+          fetch_thread.join
+          body = Array.new if !(input.match(/^y/) || input == String.new)
+        end
       end
     end
 

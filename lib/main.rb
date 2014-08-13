@@ -183,10 +183,14 @@ module E621
       end
     end
     # Draw a neat box around our input. Function expects a block.
-    def draw_box(content)
+    def draw_box(content,header=true)
       # Our content is an array of strings.
       border = "+#{content.map{|c|"-"*c.gsub(/\e\[\d+(;\d+)?m/,"").length}.join("-+-")}+"
-      puts border, "|"+content.join(" | ")+"|", border
+      if header then
+        puts border
+        puts  "|"+content.join(" | ")+"|"
+      end
+      puts border
       yield
       puts border
     end
