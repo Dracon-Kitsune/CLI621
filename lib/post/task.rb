@@ -203,7 +203,7 @@ module E621
               t = t.bold(b) if b != "normal"
               t
             end
-            print "[#{s}] | #{text}\r"
+            print "|[#{s}]| #{text}\r"
             sleep 0.25
           end
         end

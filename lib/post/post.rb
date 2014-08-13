@@ -27,6 +27,7 @@ module E621
         @login,@cookie = @passwd["login"],@passwd["cookie"]
       end
       file = "#{@@pathes["posts"]}/#{"0"*(7-id.to_s.length)}#{id}.json"
+      E621.log.debug("Post is given as a #{post.class} object and has the following content: #{post.inspect}.")
       if post.is_a?(Fixnum) then
         if @@config["cache"] then # Check if we cache anything.
           # Rename post variable to reduce confusion.
@@ -101,9 +102,9 @@ module E621
         raise E621APIError, E621.error(@id)
       end
     end
-    # Just a custom to_json function
+    # Just a custom to_json function.
     def to_json
-      {"id"=>@id,"file_url"=>@file_url,"created_at"=>@created_at}
+      {"id"=>@id, "file_url"=>@file_url, "created_at"=>@created_at}
     end
     # This function presents most information you can see on the post page on
     # e621.net. Some options are left out, as they don't make sense. Like notes.
@@ -144,7 +145,7 @@ module E621
     end
     # If there is an error code, then show it to the user so they can react.
     # Error codes are all codes above 299.
-    def error_code(code)
+    def errorcode(code)
       if code < 500 then
         $stderr.puts "Error #{code}. Post #@id could not be found by script!"
       else

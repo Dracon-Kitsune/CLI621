@@ -25,43 +25,19 @@ begin
   require "io/console"
 rescue LoadError
 end
-
+require "e621"
 require "standard/string"
 require "standard/hash"
 require "standard/int"
 require "tag"
 
 module E621
-  # A global connect function for HTTPS connections.
-  def self.connect
-    http = Net::HTTP.new("e621.net",443)
-    http.use_ssl = true
-    return http
-  end
-  # several helper functions to globalize variables
-  def self.debug=(d)
-    @@debug = d
-  end
-
-  def self.debug
-    @@debug
-  end
-
-  def self.error(id)
-    if $!.to_s.length < 128 then
-      "Post ##{id} caused an error: #$!"
-    else
-      $!.to_s =~ /<pre>.+<\/pre>/
-      err = $~.to_s
-      err = err.gsub(/<pre>|<\/pre>/,"").gsub("&gt;",">").gsub("&lt;","<").gsub("&#39","'")
-      "Post ##{id} caused a remote error: #{err}."
-    end
-  end
   class Main
     attr_reader :log
     def initialize
       Thread.abort_on_exception = true # abort on any error
       @debug      = ARGV.include?("-v") ? true : false # debug mode enabled?
+      E621.debug  = @debug
       @version    = "0.1.1"
       @name       = "CLI621"
       if ARGV.include?("-V") then
@@ -86,6 +62,44 @@ module E621
         "tmp"       => @tmp
       }
       init # run private init function
+    end
+    # Start most of the needed helper functions and set up last things.
+    def init
+      # first of all, create a temporary directory
+      Dir.mkdir(@tmp) unless File.exist?(@tmp)
+      read_config
+      set_logger
+      login
+      run_updates
+      mod_init
+      command_loop
+    end
+    # Check if important files need to be updated and update each in its own
+    # thread if needed.
+    def run_updates
+      @threads = Array.new
+      # Synchronize blacklist in cache with user blacklist on site for every 0
+      # to x minutes. Value is randomly chosen, to reduce impact on site.
+      @threads << Thread.new do
+        loop do
+          http = E621.connect
+          @mt.synchronize do
+            head,body = http.get("/post",{"cookie"=>@cookie.to_s})
+            @cookie = head["set-cookie"]
+            @cookie =~ /(?<=blacklisted_tags=).+?(?=;)/
+            blacklist = $~.to_s
+            if blacklist != String.new then
+              File.open(@pathes["blacklist"],"w") do |f|
+                f.print blacklist.split("&").to_json
+              end
+            end
+            @passwd["cookie"] = @cookie 
+            File.open(@pathes["pass"],"w"){|f|f.print @passwd.to_json}
+          end
+          sleep(rand(60*5))
+        end
+      end
+      mod_update
     end
     # Read and parse a configuration file. Raise an error if none is found.
     def read_config
@@ -124,8 +138,9 @@ module E621
       @log.formatter = proc do |sev,dat,prog,msg|
         "#{Time.now.strftime("%b %e, %Y %I:%M:%S.%L %p")}: #{msg}#$/"
       end
-      @log.level = Logger::INFO
-      @log.level = Logger::DEBUG if @debug
+      @log.level  = Logger::INFO
+      @log.level  = Logger::DEBUG if @debug
+      E621.log    = @log
     end
     # Use user credentials to log them in on two levels. API and site login are
     # used.
@@ -167,6 +182,14 @@ module E621
         File.open(@pathes["pass"],"w"){|f|f.print @passwd.to_json}
       end
     end
+    # Draw a neat box around our input. Function expects a block.
+    def draw_box(content)
+      # Our content is an array of strings.
+      border = "+#{content.map{|c|"-"*c.gsub(/\e\[\d+(;\d+)?m/,"").length}.join("-+-")}+"
+      puts border, "|"+content.join(" | ")+"|", border
+      yield
+      puts border
+    end
     # If there is no data saved for login, ask the user. They must know!
     def get_credentials
       print "Username: "
@@ -178,6 +201,20 @@ module E621
         pass = `read -s -p "Password: " pass; echo $pass`.chomp
       end
       return [name,pass]
+    end
+    # The main function of this program and UI.
+    def command_loop
+      while buff = Readline.readline(@prompt, false) do
+        if !(buff == String.new || buff == Readline::HISTORY.to_a.last) then
+          Readline::HISTORY << buff
+          @cli.history.puts buff
+        end
+        cmds = buff.split(";")
+        while buf = cmds.shift do
+          buf = buf.split(/\s+/)
+          __send__(buf.shift.downcase.to_sym,buf)
+        end
+      end
     end
   end
 end
