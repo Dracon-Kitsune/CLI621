@@ -23,11 +23,8 @@ module E621
     # Do module specific tasks here.
     def mod_init
       Pool.init(@config,@pathes)
-      if !File.exists?(@pathes["tasks"]) then
-        File.open(@pathes["tasks"],"w"){|f|f.print "{}"}
-      end
       Readline.completion_proc = proc do |s|
-        @tags.map{|t|t["name"]}.grep(/^#{s}/)
+        # A function to get some useful completion feed back should be here.
       end
       Readline.completer_word_break_characters  = " "
       Readline.completion_append_character      = " "
@@ -39,7 +36,8 @@ module E621
 
     def list(buf)
       content = [
-        " Name".pad(59),
+        " ID".pad(8),
+        "Name".pad(49),
         "Posts",
         "Public "
       ]
@@ -47,10 +45,18 @@ module E621
       until body == Array.new do
         request = "query=#{buf.join(" ")}&page=#{page}"
         draw_box(content,page == 1 ? true : false) do
-          body = @http.post("/pool/index.json",request).body.parse if page == 1
+          begin
+            if page == 1 then
+              head,body = @http.post("/pool/index.json",request)
+              body = body.parse
+            end
+          rescue
+            p head.code
+            raise
+          end
           body.each do |pool|
             pool = Pool.new(pool)
-            puts "| #{pool.name.pad(58)} | #{pool.post_count.pad(5," ")} | #{pool.public ? "Yes   ".bold("green") : "No    ".bold("yellow")} |"
+            puts "| #{pool.id.pad(7," ")} | #{pool.name.pad(49)} | #{pool.post_count.pad(5," ")} | #{pool.public ? "Yes   ".bold("green") : "No    ".bold("yellow")} |"
           end
         end
         if body != Array.new then
@@ -58,7 +64,7 @@ module E621
           fetch_thread = Thread.new do 
             body = @http.post("/pool/index.json",request).body.parse
           end
-          print "Loading next page? [Y/n]"
+          print "Loading next page? [Y/n] "
           input = $stdin.gets.to_s.chomp
           fetch_thread.join
           body = Array.new if !(input.match(/^y/) || input == String.new)
@@ -66,7 +72,14 @@ module E621
       end
     end
 
+    def show(buf)
+      buf.each do |id|
+        p @http.post("/pool/show.json","id=#{id}").body.parse.keys
+      end
+    end
+
     def download(buf)
+      buf.each do |id|
     end
 
     def update(buf)
@@ -88,6 +101,7 @@ module E621
     def help
       puts ["This is a list of all commands:",
         "list SEARCHPATTERN [Always the whole pattern is searched for.]",
+        "show ID1 ID2 ID3 ...",
         "download ID1 ID2 ID3 ...",
         "update ID1 ID2 ID3 ...",
         "create",

@@ -100,6 +100,7 @@ module E621
       # said directory.
       Dir.mkdir(@name) unless File.exist?(@name)
       Dir.chdir(@name)
+=begin
       if @@config["cache"] then
         Dir.mkdir(@@pathes["cache"]) unless File.exist?(@@pathes["cache"])
         cache_files = Dir[@@pathes["cache"]+"/*"]
@@ -107,6 +108,7 @@ module E621
         cache_files.sort!{|f1,f2|f2[1]<=>f1[1]}
         # Sort cache files after file size.
       end
+=end
       @id,@date,@got,@total = 0,0,0,@posts.length
       mt = Mutex.new
       max_threads = @@config["threads"].to_i <= 10 ? @@config["threads"].to_i : 10
@@ -120,42 +122,10 @@ module E621
           end
           threads[i] = Thread.new(post) do |tpost|
             # When a thread ended, start a new one with a new task.
-            id,file_url = tpost.id,tpost.file_url # Save us some typing here.
-            file = File.basename(file_url)
-            if @@config["cache"] then # Do we cache files?
-              c_file = @@pathes["cache"]+"/#{file}"
-              if File.exist?(c_file) then
-                # If we cache and a file exists, don't download a new one!
-                File.open(c_file) do |f|
-                  File.open("#{id.pad(7)}.#{file}","w") do |g|
-                    g.print f.read
-                  end
-                end
-              else
-                # If none exists, download a new one and check if the cache size
-                # doesn't get too big.
-                body = download_post(file_url,id)
-                File.open(c_file,"w"){|f|f.print body}
-                @mt.synchronize do
-                  cache_files << [c_file,body.length]
-                  cache_files.sort!{|f1,f2|f2[1]<=>f1[1]}
-                  file_size = 0
-                  cache_files.each{|f|file_size+=f[1]}
-                  while file_size >= @@config["cache_size"].to_i*2**20 do
-                    d_file = cache_files.shift
-                    File.unlink(d_file[0])
-                    file_size -= d_file[1]
-                  end
-                end
-              end
-            else
-              # If we don't cache, just get stuff straight from the source, all
-              # the time.
-              download_post(file_url,id)
-            end
+            tpost.download(@mt,cache_files) # All we want is a post to be downloaded.
             mt.synchronize do
               @got += 1
-              @id = id if @id < id
+              @id = tpost.id if @id < tpost.id
               @date = tpost.created_at if @date < tpost.created_at
               # Just update all stats with the newest data.
             end
@@ -170,19 +140,6 @@ module E621
       puts
     end
     private
-    # Function to download a post.
-    def download_post(file_url,id)
-      http = Net::HTTP.new(file_url.match(%r[(?<=//).+?(?=/)]).to_s,443)
-      http.use_ssl = true
-      length, body = 2,""
-      until length <= body.length do
-        head,body = http.get(file_url.sub(/.+?net/,""))
-        length = head["content-length"].to_i
-      end
-      file = File.basename(file_url)
-      File.open("#{id.pad(7)}.#{file}","w"){|f|f.print body}
-      return body
-    end
     # User information for several threads.
     def threading(t)
       task = case t

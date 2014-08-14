@@ -19,7 +19,7 @@
 
 module E621
   class Pool
-    attr_reader :name,:creator,:posts,:public,:post_count
+    attr_reader :name,:id,:posts,:public,:post_count
     def initialize(pool)
       E621.log.debug("Pool is given as a #{pool.class} object and has the following content: #{pool.inspect}.")
       http = E621.connect
