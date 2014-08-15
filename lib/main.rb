@@ -115,7 +115,7 @@ module E621
           raise ConfigError, "Configuration file corrupted!"
         end
         @config = c
-        @config["cache"] = @config["cache"].to_s.to_bool
+        #@config["cache"] = @config["cache"].to_s.to_bool
         @config["auto_login"] = @config["auto_login"].to_s.to_bool
         @config["tag_trash_hold"] = @config["tag_trash_hold"].to_i
         @config["threads"] = @config["threads"].to_i

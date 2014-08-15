@@ -6,6 +6,7 @@
     "set":"~/pictures/e621/sets"
   },
   "tag_trash_hold":30,
+  "auto_login":true,
   "prompt_color":"yellow",
   "threads":10
 }
