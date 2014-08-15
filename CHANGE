@@ -1,0 +1,11 @@
+v0.2
+  + pools can be listed by search strings
+  + download of whole pools
+  + different directories for pools, posts and set requests
+v0.1
+  + posts download
+  + voting on posts
+  + favoring posts
+  + making tasks and storing them
+  + a simple login
+  + blacklists download and synchronize with on-site blacklists

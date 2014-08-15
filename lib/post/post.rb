@@ -22,18 +22,20 @@ module E621
     # commands show/fav/unfav/voteup/votedown
     attr_reader :id,:file_url,:created_at
     def initialize(post)
-      File.open(@@pathes["pass"]) do |f|
+      File.open(@@paths["pass"]) do |f|
         @passwd = f.read.parse
         @login,@cookie = @passwd["login"],@passwd["cookie"]
       end
-      file = "#{@@pathes["posts"]}/#{"0"*(7-id.to_s.length)}#{id}.json"
+      file = "#{@@paths["posts"]}/#{"0"*(7-id.to_s.length)}#{id}.json"
+      E621.log.debug("Post is given as a #{post.class} object and has the following content: #{post.inspect}.")
       if post.is_a?(Fixnum) then
+=begin
         if @@config["cache"] then # Check if we cache anything.
           # Rename post variable to reduce confusion.
           @id, @http = post, E621.connect
           if !File.exist?(file) || File.ctime(file) < Time.now-60*60*24*1 then
             # If not existent or too old, get a fresh one.
-            post,code = download
+            post,code = download_post
             save_cache(post,code,file)
           elsif File.exist?(file) && File.ctime(file) >= Time.now-60*60*24*1 then
             # If File exists and is not too old, load that file instead. To save
@@ -43,15 +45,16 @@ module E621
             code = 200 # Pretend everything came good straight from the net.
           end
         else # If we don't cache, always get it straight from the web.
+=end
           @id, @http = post, E621.connect
           header,post = @http.get("/post/show.json?id=#@id&#@login")
           code = header.code.to_i
           post = post.parse if code < 300 # Everything gone good? Good!
-        end
-      elsif post.is_a?(Hash) then # If post arguement is already a Hash object.
+        #end
+      elsif post.is_a?(Hash) then # If post argument is already a Hash object.
         @id = post["id"]
         code = 200
-        save_cache(post,code,file) if @@config["cache"]
+        #save_cache(post,code,file) if @@config["cache"]
       end
       if code < 300 then
         @post = post
@@ -64,8 +67,8 @@ module E621
       end
     end
     # Initialize configuration class wide, so not each instance needs it too.
-    def self.init(config,pathes)
-      @@config,@@pathes = config,pathes
+    def self.init(config,paths)
+      @@config,@@paths = config,paths
     end
     # Vote a post up or done. The argument "direction" indicates if it is an up
     # vote or down vote. Possible values are +1 or -1.
@@ -101,9 +104,46 @@ module E621
         E621.error(@id)
       end
     end
-    # Just a custom to_json function
+    # Just a custom to_json function.
     def to_json
-      {"id"=>@id,"file_url"=>@file_url,"created_at"=>@created_at}
+      {"id"=>@id, "file_url"=>@file_url, "created_at"=>@created_at}
+    end
+    # A real download function for Post itself should be worth it.
+    def download(pre_string="")
+      @file = File.basename(@file_url)
+=begin
+      if @@config["cache"] then # Do we cache files?
+        c_file = @@paths["cache"]+"/#@file"
+        if File.exist?(c_file) then
+          # If we cache and a file exists, don't download a new one!
+          File.open(c_file) do |f|
+            File.open("#{@id.pad(7)}.#@file","w") do |g|
+              g.print f.read
+            end
+          end
+        else
+          # If none exists, download a new one and check if the cache size
+          # doesn't get too big.
+          body = download_helper
+          File.open(c_file,"w"){|f|f.print body}
+          mt.synchronize do
+            cache_files << [c_file,body.length]
+            cache_files.sort!{|f1,f2|f2[1]<=>f1[1]}
+            file_size = 0
+            cache_files.each{|f|file_size+=f[1]}
+            while file_size >= @@config["cache_size"].to_i*2**20 do
+              d_file = cache_files.shift
+              File.unlink(d_file[0])
+              file_size -= d_file[1]
+            end
+          end
+        end
+      else
+=end
+        # If we don't cache, just get stuff straight from the source, all
+        # the time.
+        download_helper(pre_string)
+#      end
     end
     # This function presents most information you can see on the post page on
     # e621.net. Some options are left out, as they don't make sense. Like notes.
@@ -132,8 +172,20 @@ module E621
       end
     end
     private
+    # A little helper function for file downloads.
+    def download_helper(pre_string)
+      http = Net::HTTP.new(@file_url.match(%r[(?<=//).+?(?=/)]).to_s,443)
+      http.use_ssl = true
+      length, body = 2,""
+      until length <= body.length do
+        head,body = http.get(@file_url.sub(/.+?net/,""))
+        length = head["content-length"].to_i
+      end
+      File.open("#{pre_string}#{@id.pad(7)}.#{@file}","w"){|f|f.print body}
+      return body
+    end
     # Download and cache files if needed.
-    def download
+    def download_post
       header,post = @http.get("/post/show.json?id=#@id&#@login")
       code = header.code.to_i
       if code < 300 then # Everything gone good? Good!
@@ -145,7 +197,7 @@ module E621
     end
     # If there is an error code, then show it to the user so they can react.
     # Error codes are all codes above 299.
-    def error_code(code)
+    def errorcode(code)
       if code < 500 then
         $stderr.puts "Error #{code}. Post #@id could not be found by script!"
       else
@@ -157,7 +209,7 @@ module E621
     # code more readable and smaller.
     def save_cache(post,code,file)
       if code < 300 then
-        Dir.mkdir(@@pathes["posts"]) unless File.exist?(@@pathes["posts"])
+        Dir.mkdir(@@paths["posts"]) unless File.exist?(@@paths["posts"])
         File.open(file,"w") do |f|
           f.puts post.to_json
         end
@@ -186,24 +238,24 @@ module E621
     def show_tags
       types = ["Artist","Copyright","Character","Species","General"]
       types.each do |type|
-        case type
-        when "General"    then puts type.bold;type = 0
-        when "Artist"     then puts type.bold("yellow");type = 1
-        when "Copyright"  then puts type.bold("purple");type = 3
-        when "Character"  then puts type.bold("green");type = 4
-        when "Species"    then puts type.bold("red");type = 5
-        end
-        tags = Array.new
-        @tags.each do |t|
-          next if !t.name.is_a?(String)
-          name,count = t.name.sub(/\s+$/,"").pad(17), t.count.to_s
-          tags << "#{" "*(7-count.length)}#{count} #{name}" if t.type == type
-        end
-        while (t = tags.shift(3)) != [] do
-          line = " "*2+t.map{|tag|tag}.join(" ")
-          puts line
+          case type
+          when "General"    then puts type.bold;type = 0
+          when "Artist"     then puts type.bold("yellow");type = 1
+          when "Copyright"  then puts type.bold("purple");type = 3
+          when "Character"  then puts type.bold("green");type = 4
+          when "Species"    then puts type.bold("red");type = 5
+          end
+          tags = Array.new
+          @tags.each do |t|
+            next if !t.name.is_a?(String)
+            name,count = t.name.sub(/\s+$/,"").pad(17), t.count.to_s
+            tags << "#{" "*(7-count.length)}#{count} #{name}" if t.type == type
+          end
+          while (t = tags.shift(3)) != [] do
+            line = " "*2+t.map{|tag|tag}.join(" ")
+            puts line
+          end
         end
       end
     end
   end
-end

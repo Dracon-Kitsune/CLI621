@@ -1,4 +1,4 @@
-CLI621 v 0.1.1
+CLI621 v 0.2
 
 CLI621 is an e621.net downloader for the command line interface. It accepts
 tasks and downloads requested content from e621.net. It is still in development
@@ -18,11 +18,8 @@ Versioning
   MAJOR updates add new features, but are not backwards compatible.
 
 Branches
-  Stable versions get their own branch now. Master will always be considered
-  unstable and copied into a new branch, when a minor release is ready. Check
-  out "stable-releases/" to find out about the newest version!
-  Stable means that it runs on the author's system smoothly and she did not find
-  any major bugs!
+  Master always contains stable releases. Where stable means that the author did
+  not find any major bugs in her testing.
 
 If you find any bugs or have some suggestions, please mail them to
 maxine_red1@yahoo.com. Thank you!
