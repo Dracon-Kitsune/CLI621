@@ -22,16 +22,16 @@ module E621
     private
     # Do module specific tasks here.
     def mod_init
-      File.open(@pathes["tags"],"w"){|f|f.print "[]"} unless File.exist?(@pathes["tags"])
+      File.open(@paths["tags"],"w"){|f|f.print "[]"} unless File.exist?(@paths["tags"])
       # create a tag file if none exists
-      File.open(@pathes["tags"]) do |f|
+      File.open(@paths["tags"]) do |f|
         @tags = f.read.parse # read all tags inside of the json string
         $tags = @tags
       end
-      Task.init(@config,@pathes)
-      Post.init(@config,@pathes)
-      if !File.exists?(@pathes["tasks"]) then
-        File.open(@pathes["tasks"],"w"){|f|f.print "{}"}
+      Task.init(@config,@paths)
+      Post.init(@config,@paths)
+      if !File.exists?(@paths["tasks"]) then
+        File.open(@paths["tasks"],"w"){|f|f.print "{}"}
       end
       Readline.completion_proc = proc do |s|
         @tags.map{|t|t["name"]}.grep(/^#{s}/)
@@ -42,8 +42,8 @@ module E621
     end
     # Run module specific updates, if there are any.
     def mod_update
-      diff = Time.now-File.mtime(@pathes["tags"])
-      diff = 0 if File.size(@pathes["tags"]) <= 2 # Update if tags are empty!
+      diff = Time.now-File.mtime(@paths["tags"])
+      diff = 0 if File.size(@paths["tags"]) <= 2 # Update if tags are empty!
       if diff.to_i >= 60*60*24*7 then # Just update if cache is older than a week.
         @threads << Thread.new do
           http = E621.connect
@@ -60,7 +60,7 @@ module E621
             @log.info "Tags update: got page ##{page}" if page % 50 == 0
             page += 1
           end
-          File.open(@pathes["tags"],"w") do |f|
+          File.open(@paths["tags"],"w") do |f|
             f.print tags.to_json
           end
           # Report when task ended.
@@ -71,7 +71,7 @@ module E621
     # This is a general purpose function to work on tasks. This function needs
     # a block to work properly.
     def work_task
-      f = File.open(@pathes["tasks"],"a+")
+      f = File.open(@paths["tasks"],"a+")
       @tasks = f.read.parse.map{|t|Task.new(t["name"],t["queries"],t["posts"])}
       if !f.flock(File::LOCK_NB|File::LOCK_EX) then
         $stderr.puts "Another process is working on tasks" 

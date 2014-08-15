@@ -22,11 +22,11 @@ module E621
     # commands show/fav/unfav/voteup/votedown
     attr_reader :id,:file_url,:created_at
     def initialize(post)
-      File.open(@@pathes["pass"]) do |f|
+      File.open(@@paths["pass"]) do |f|
         @passwd = f.read.parse
         @login,@cookie = @passwd["login"],@passwd["cookie"]
       end
-      file = "#{@@pathes["posts"]}/#{"0"*(7-id.to_s.length)}#{id}.json"
+      file = "#{@@paths["posts"]}/#{"0"*(7-id.to_s.length)}#{id}.json"
       E621.log.debug("Post is given as a #{post.class} object and has the following content: #{post.inspect}.")
       if post.is_a?(Fixnum) then
 =begin
@@ -67,8 +67,8 @@ module E621
       end
     end
     # Initialize configuration class wide, so not each instance needs it too.
-    def self.init(config,pathes)
-      @@config,@@pathes = config,pathes
+    def self.init(config,paths)
+      @@config,@@paths = config,paths
     end
     # Vote a post up or done. The argument "direction" indicates if it is an up
     # vote or down vote. Possible values are +1 or -1.
@@ -109,11 +109,11 @@ module E621
       {"id"=>@id, "file_url"=>@file_url, "created_at"=>@created_at}
     end
     # A real download function for Post itself should be worth it.
-    def download(mt)
+    def download(pre_string="")
       @file = File.basename(@file_url)
 =begin
       if @@config["cache"] then # Do we cache files?
-        c_file = @@pathes["cache"]+"/#@file"
+        c_file = @@paths["cache"]+"/#@file"
         if File.exist?(c_file) then
           # If we cache and a file exists, don't download a new one!
           File.open(c_file) do |f|
@@ -142,7 +142,7 @@ module E621
 =end
         # If we don't cache, just get stuff straight from the source, all
         # the time.
-        download_helper
+        download_helper(pre_string)
 #      end
     end
     # This function presents most information you can see on the post page on
@@ -172,7 +172,7 @@ module E621
     end
     private
     # A little helper function for file downloads.
-    def download_helper
+    def download_helper(pre_string)
       http = Net::HTTP.new(@file_url.match(%r[(?<=//).+?(?=/)]).to_s,443)
       http.use_ssl = true
       length, body = 2,""
@@ -180,7 +180,7 @@ module E621
         head,body = http.get(@file_url.sub(/.+?net/,""))
         length = head["content-length"].to_i
       end
-      File.open("#{@id.pad(7)}.#{@file}","w"){|f|f.print body}
+      File.open("#{pre_string}#{@id.pad(7)}.#{@file}","w"){|f|f.print body}
       return body
     end
     # Download and cache files if needed.
@@ -207,7 +207,7 @@ module E621
     # code more readable and smaller.
     def save_cache(post,code,file)
       if code < 300 then
-        Dir.mkdir(@@pathes["posts"]) unless File.exist?(@@pathes["posts"])
+        Dir.mkdir(@@paths["posts"]) unless File.exist?(@@paths["posts"])
         File.open(file,"w") do |f|
           f.puts post.to_json
         end

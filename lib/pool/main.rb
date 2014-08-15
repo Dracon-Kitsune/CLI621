@@ -22,7 +22,8 @@ module E621
     private
     # Do module specific tasks here.
     def mod_init
-      Pool.init(@config,@pathes)
+      Pool.init(@config,@paths)
+      Post.init(@config,@paths)
       Readline.completion_proc = proc do |s|
         # A function to get some useful completion feed back should be here.
       end
@@ -51,7 +52,7 @@ module E621
               body = body.parse
             end
           rescue
-            p head.code
+            #p head.code
             raise
           end
           body.each do |pool|
@@ -73,13 +74,49 @@ module E621
     end
 
     def show(buf)
-      buf.each do |id|
-        p @http.post("/pool/show.json","id=#{id}").body.parse.keys
-      end
+      #buf.each do |id|
+      #  p @http.post("/pool/show.json","id=#{id}").body.parse.keys
+      #end
     end
 
     def download(buf)
-      buf.each do |id|
+      n = 52 # Just a general variable to not have 3 lines changed constantly.
+      content = ["  ","Name".pad(n),"ID".pad(7),"Posts".pad(8)]
+      draw_box(content) do
+        buf.each do |id|
+          id = id.to_i
+          inform_user do
+            @user_string = [" "*n," "*6+"0"," "*2+"0/"+" "*2+"0 |"].join(" | ")
+            body = @http.post("/pool/show.json","id=#{id}").body.parse
+            posts,mt = body["posts"],Mutex.new
+            name,max,count = body["name"].gsub("_"," "),body["post_count"],0
+            name.gsub!(/[^a-z,_, ,#,0-9,\-]/i,"")
+            t = Thread.new do
+              page = 2
+              until (posts.length >= max || body["posts"] == Array.new) do
+                body = @http.post("/pool/show.json","id=#{id}&page=#{page}").body.parse
+                mt.synchronize do
+                  posts += body["posts"]
+                  page += 1
+                end
+              end
+            end
+            Dir.mkdir(name) unless File.exist?(name)
+            Dir.chdir(name)
+            until count >= max do 
+              @user_string = "#{name.pad(n)} | #{id.pad(7," ")} | #{count.succ.pad(3," ")}/#{max.pad(3," ")} |"
+              if posts[count] then
+                # If posts are deleted, just skip them.
+                post = Post.new(posts[count])
+                post.download(count.succ.pad(3)+".")
+              end
+              count += 1
+            end
+            sleep 0.5
+            Dir.chdir("..")
+          end
+        end
+      end
     end
 
     def update(buf)
@@ -111,6 +148,21 @@ module E621
         "IDs for add and remove are actual pool IDs. Post IDs get asked in a second",
         "step, to perform adding or removing posts to/from pools."
       ]
+    end
+    private
+    # A helper function to provide live data to users.
+    def inform_user
+      thread = Thread.new do
+        loop do
+          ["|","/","-","\\"].each do |s|
+            print "|[#{s}]| #@user_string\r"
+            sleep 0.25
+          end
+        end
+      end
+      yield
+      thread.exit
+      puts
     end
   end
 end

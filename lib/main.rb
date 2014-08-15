@@ -44,12 +44,13 @@ module E621
         puts "#@name v#@version"
         exit
       end
+      @tool       = File.basename($0)
       @home       = File.expand_path("~/.e621/")
       @tmp        = @debug ? "/tmp/e621.debug" : "/tmp/e621" 
       @mt         = Mutex.new
       @cli        = CLI.new(@home+"/history")
       @http       = E621.connect
-      @pathes     = {
+      @paths     = {
         "tasks"     => "#@tmp/tasks.json",
         "config"    => "#@home/conf.json",
         "tags"      => "#@home/tags.json",
@@ -89,12 +90,12 @@ module E621
             @cookie =~ /(?<=blacklisted_tags=).+?(?=;)/
             blacklist = $~.to_s
             if blacklist != String.new then
-              File.open(@pathes["blacklist"],"w") do |f|
+              File.open(@paths["blacklist"],"w") do |f|
                 f.print blacklist.split("&").to_json
               end
             end
             @passwd["cookie"] = @cookie 
-            File.open(@pathes["pass"],"w"){|f|f.print @passwd.to_json}
+            File.open(@paths["pass"],"w"){|f|f.print @passwd.to_json}
           end
           sleep(rand(60*5))
         end
@@ -103,11 +104,11 @@ module E621
     end
     # Read and parse a configuration file. Raise an error if none is found.
     def read_config
-      conf = File.expand_path(@pathes["config"])
+      conf = File.expand_path(@paths["config"])
       if !File.exist?(conf) then
        raise ConfigError, "No config file found. Installation corrupted!"
       end
-      File.open(@pathes["config"]) do |f|
+      File.open(@paths["config"]) do |f|
         begin
           c = f.read.parse # read and parse configuration
         rescue
@@ -119,14 +120,14 @@ module E621
         @config["tag_trash_hold"] = @config["tag_trash_hold"].to_i
         @config["threads"] = @config["threads"].to_i
         @config["cache_size"] = @config["cache_size"].to_i
-        dir = [""]
-        File.expand_path(c["picture_path"]).split("/").each do |d|
-          # Create our working directory first!
-          dir << d
-          Dir.mkdir(dir.join("/")) unless File.exist?(dir.join("/"))
-          # If our directory does not exist, make it.
+        dir = File.expand_path(@config["paths"][@tool])
+        if !File.exist?(File.dirname(dir)) then
+          # If parent directory does not exist, then abort and say so!
+          $stderr.puts "Parent directory #{dir} does not exist!"
+          abort
         end
-        Dir.chdir(File.expand_path(c["picture_path"])) # change working path
+        Dir.mkdir(dir) unless File.exist?(dir)
+        Dir.chdir(dir) # change working path
         @tag_trash  = @config["tag_trash_hold"]
         # Tags with a post count lower than this get ignored.
         @color      = @config["prompt_color"] # Prompt color.
@@ -134,7 +135,7 @@ module E621
     end
     # Set up logger functions. User information on STDERR should still be given.
     def set_logger
-      @log = Logger.new(@pathes["info"])
+      @log = Logger.new(@paths["info"])
       @log.formatter = proc do |sev,dat,prog,msg|
         "#{Time.now.strftime("%b %e, %Y %I:%M:%S.%L %p")}: #{msg}#$/"
       end
@@ -146,7 +147,7 @@ module E621
     # used.
     def login
       #Load all user credentials into one variable.
-      File.open(@pathes["pass"]){|f|@passwd=f.read.parse}
+      File.open(@paths["pass"]){|f|@passwd=f.read.parse}
       @login,@cookie = @passwd["login"],@passwd["cookie"]
       name,pass = String.new, String.new
       # Perform a re-login if the last time is older than x days.
@@ -179,7 +180,7 @@ module E621
         @passwd["cookie"] = @cookie 
         @passwd["last_login"] = Time.now.to_i
         # Write everything back!
-        File.open(@pathes["pass"],"w"){|f|f.print @passwd.to_json}
+        File.open(@paths["pass"],"w"){|f|f.print @passwd.to_json}
       end
     end
     # Draw a neat box around our input. Function expects a block.
@@ -190,6 +191,7 @@ module E621
         puts border
         puts  "|"+content.join(" | ")+"|"
       end
+      #p border.length
       puts border
       yield
       puts border

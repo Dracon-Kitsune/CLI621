@@ -1,7 +1,12 @@
 {
-  "picture_path":"~/pictures/e621",
+  "paths":
+  {
+    "post":"~/pictures/e621",
+    "pool":"~/pictures/e621/pools",
+    "set":"~/pictures/e621/sets"
+  },
   "tag_trash_hold":30,
   "auto_login":true,
   "prompt_color":"yellow",
-  "threads":1
+  "threads":10
 }

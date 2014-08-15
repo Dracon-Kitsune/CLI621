@@ -40,9 +40,10 @@ module E621
   def self.log
     @@log
   end
-
+  # This is a general error handling method and should be put into an error
+  # class.
   def self.error(id)
-    if $!.to_s.length < 128 then
+    if $!.to_s.length < 512 then
       "Post ##{id} caused an error: #$!"
     else
       $!.to_s =~ /<pre>.+<\/pre>/

@@ -122,7 +122,7 @@ module E621
           end
           threads[i] = Thread.new(post) do |tpost|
             # When a thread ended, start a new one with a new task.
-            tpost.download(@mt) # All we want is a post to be downloaded.
+            tpost.download # All we want is a post to be downloaded.
             mt.synchronize do
               @got += 1
               @id = tpost.id if @id < tpost.id
