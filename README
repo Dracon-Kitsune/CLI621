@@ -3,7 +3,7 @@ CLI621 v 0.2
 CLI621 is an e621.net downloader for the command line interface. It accepts
 tasks and downloads requested content from e621.net. It is still in development
 and more features will be added soon.
-
+ 
 Usage
   Just switch into bin/ and use ./post or make a symlink of bin/post into your
   search path, like /usr/bin.
