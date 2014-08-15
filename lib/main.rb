@@ -207,7 +207,6 @@ module E621
         pass = `read -s -p "Password: " pass; echo $pass`.chomp
       end
       return [name,pass]
->>>>>>> v0.2
     end
     # The main function of this program and UI.
     def command_loop
