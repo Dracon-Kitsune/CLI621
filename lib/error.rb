@@ -1,4 +1,3 @@
-#!/usr/bin/env ruby
 =begin
   Copyright 2014 Maxine Red <maxine_red1@yahoo.com>
 
@@ -18,38 +17,22 @@
   along with CLI621.  If not, see <http://www.gnu.org/licenses/>.
 =end
 
-file = File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__
-$:.unshift(File.dirname(file)+"/../lib")
-require "main"
-require "cli"
-require "post/main"
-require "post/post"
-require "post/task"
+# All these classes are just to better identify different types of errors. They
+# don't add any new function or anything.
+class AuthentificationError < StandardError
+end
 
-=begin
-  Features provided:
+class E621SiteError < StandardError
+end
 
-  +- Posts
-  |
-  +--+- show
-  |  +- vote
-  |  +- fav
-  |
-  +- Tasks
-  |
-  +--+- add/remove
-     +- update
-     +- download
-=end
-begin
-  debug  = ARGV.include?("-v") ? true : false # debug mode enabled?
-  e621   = E621::Main.new
-rescue => e
-  if debug then
-    raise
-  else
-    $stderr.puts "Program aborted! Reason is #$!."
-  end
-ensure
-  puts # Always make a nice cleanup!
+class E621ServerError < StandardError
+end
+
+class E621APIError < StandardError
+end
+
+class ConfigError < StandardError
+end
+
+class InternalError < StandardError
 end

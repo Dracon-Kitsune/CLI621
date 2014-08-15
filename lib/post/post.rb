@@ -80,7 +80,7 @@ module E621
         answer = @http.post("/post/vote.json","id=#@id&score=#{direction}&#@login").body.parse
         score,success,change = answer["score"],answer["success"],answer["change"]
       rescue
-        E621.error(@id)
+        raise E621APIError, E621.error(@id)
       end
       if success then
         puts "  #@id #{score.to_i-change} -> #{score}"
@@ -101,7 +101,7 @@ module E621
           puts "#{sign}Favorite".bold+" failed on #@id: #{answer["reason"]}"
         end
       rescue
-        E621.error(@id)
+        raise E621APIError, E621.error(@id)
       end
     end
     # Just a custom to_json function.
@@ -167,8 +167,7 @@ module E621
         puts " "*4+"Favorite: #{faved ? "Yes".bold("green") : "No".bold("red")}"
         show_tags
       rescue
-        $stderr.puts [@post,faved].inspect
-        raise
+        raise InternalError, "Post ##@id raised an error: #$!."
       end
     end
     private
@@ -201,8 +200,7 @@ module E621
       if code < 500 then
         $stderr.puts "Error #{code}. Post #@id could not be found by script!"
       else
-        $stderr.puts "Error #{code}. E621.net experiences difficulties, please stand by."
-        raise StandardError, "Return code implies server side error."
+        raise E621ServerError, "Error #{code}. E621.net experiences difficulties, please stand by."
       end
     end
     # A helper function for saving cache files. This function is just to make
