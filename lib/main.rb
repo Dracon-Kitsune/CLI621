@@ -17,33 +17,6 @@
   along with CLI621.  If not, see <http://www.gnu.org/licenses/>.
 =end
 
-<<<<<<< HEAD
-module E621
-  # A global connect function for HTTPS connections.
-  def self.connect
-    http = Net::HTTP.new("e621.net",443)
-    http.use_ssl = true
-    return http
-  end
-  # several helper functions to globalize variables
-  def self.debug=(d)
-    @@debug = d
-  end
-
-  def self.debug
-    @@debug
-  end
-
-  def self.error(id)
-    if $!.to_s.length < 128 then
-      $stderr.puts "Post ##{id} caused an error: #$!"
-    else
-      $!.to_s =~ /<pre>.+<\/pre>/
-      err = $~.to_s
-      err = err.gsub(/<pre>|<\/pre>/,"").gsub("&gt;",">").gsub("&lt;","<").gsub("&#39","'")
-      $stderr.puts "Post ##{id} caused a remote error: #{err}.","Aborting!"
-      abort
-=======
 require "net/http"
 require "thread"
 require "time"
