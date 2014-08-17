@@ -19,26 +19,30 @@
 
 module E621
   class Pool
-    attr_reader :name,:id,:posts,:public,:post_count
+    attr_reader :name,:id,:posts,:is_public,:post_count
     def initialize(pool)
       E621.log.debug("Pool is given as a #{pool.class} object and has the following content: #{pool.inspect}.")
       http = E621.connect
       if pool.is_a?(Hash) then
-        @id, @public, @name, @post_count = pool["id"], pool["is_public"], pool["name"], pool["post_count"]
+        pool.each do |k,v|
+          instance_variable_set("@#{k}".to_sym,v)
+        end
         @name.gsub!("_"," ")
       elsif pool.is_a?(Fixnum) then
       else raise ArgumentError, "Class #{pool.class} is not recognized in this context."
       end
     end
-    
-    def update
+    # Show all information of this pool.
+    def show
+      #puts "#{@name.bold} (#@id)",""
+      #puts " "*2+"Posts: #{@post_count}"
+      #puts " "*2+"Created at: #{Time.at(@created_at["s"]).strftime("%b %e,%Y %I:%M %p")}"
+
     end
     # Initialize configuration class wide, so not each instance needs it too.
     def self.init(config,pathes)
       @@config,@@pathes = config,pathes
     end
 
-    def save
-    end
   end
 end

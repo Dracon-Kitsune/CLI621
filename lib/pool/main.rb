@@ -57,7 +57,7 @@ module E621
           end
           body.each do |pool|
             pool = Pool.new(pool)
-            puts "| #{pool.id.pad(7," ")} | #{pool.name.pad(49)} | #{pool.post_count.pad(5," ")} | #{pool.public ? "Yes   ".bold("green") : "No    ".bold("yellow")} |"
+            puts "| #{pool.id.pad(7," ")} | #{pool.name.pad(49)} | #{pool.post_count.pad(5," ")} | #{pool.is_public ? "Yes   ".bold("green") : "No    ".bold("yellow")} |"
           end
         end
         if body != Array.new then
@@ -74,9 +74,12 @@ module E621
     end
 
     def show(buf)
-      #buf.each do |id|
-      #  p @http.post("/pool/show.json","id=#{id}").body.parse.keys
-      #end
+      buf.each do |id|
+        body = @http.post("/pool/show.json","id=#{id}").body.parse
+        p body.keys
+        pool = Pool.new(body)
+        pool.show
+      end
     end
 
     def download(buf)

@@ -27,9 +27,11 @@ rescue LoadError
 end
 require "e621"
 require "standard/string"
-require "standard/hash"
+#require "standard/hash"
 require "standard/int"
+require "standard/time"
 require "tag"
+require "user"
 
 module E621
   class Main
