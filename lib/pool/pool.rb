@@ -34,15 +34,18 @@ module E621
     end
     # Show all information of this pool.
     def show
-      #puts "#{@name.bold} (#@id)",""
-      #puts " "*2+"Posts: #{@post_count}"
-      #puts " "*2+"Created at: #{Time.at(@created_at["s"]).strftime("%b %e,%Y %I:%M %p")}"
-
+      creator = User.new(@user_id)
+      puts "#{@name.bold} (#@id)",""
+      puts " "*2+"Posts".bold+": #{@post_count}"
+      puts " "*2+"Created at".bold+": #{Time.at(@created_at["s"])}"
+      puts " "*2+"Creator".bold+": #{creator.name}"
+      puts " "*2+"Public".bold+": #{@is_public ? "Yes".bold("green") : "No".bold("yellow")}"
+      puts " "*2+"Last updated".bold+": #{Time.at(@updated_at["s"])}"
+      puts " "*2+"Description".bold+":",@description.indent(4)
     end
     # Initialize configuration class wide, so not each instance needs it too.
     def self.init(config,pathes)
       @@config,@@pathes = config,pathes
     end
-
   end
 end

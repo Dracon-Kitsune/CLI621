@@ -67,6 +67,11 @@ class String
     end
     c+self+"\e[0m"
   end
+  # indent a string and all lines that belong to it
+  def indent(indent)
+    s = self.split("#$/")
+    " "*indent+s.join("#$/"+" "*indent)
+  end
   # It is just convenient to have a custom to_bool function. Only "true" gets
   # turned into true, anything else is false.
   def to_bool
