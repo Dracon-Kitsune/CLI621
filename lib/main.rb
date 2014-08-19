@@ -212,7 +212,8 @@ module E621
     end
     # The main function of this program and UI.
     def command_loop
-      while buff = Readline.readline(@prompt, false) do
+      prompt = @prompt+"> "
+      while buff = Readline.readline(prompt.bold(@color), false) do
         if !(buff == String.new || buff == Readline::HISTORY.to_a.last) then
           Readline::HISTORY << buff
           @cli.history.puts buff

@@ -19,18 +19,33 @@
 
 module E621
   class Pool
-    attr_reader :name,:id,:posts,:is_public,:post_count
+    attr_reader :name,:id,:posts,:is_public,:post_count,:description
     def initialize(pool)
-      E621.log.debug("Pool is given as a #{pool.class} object and has the following content: #{pool.inspect}.")
-      http = E621.connect
-      if pool.is_a?(Hash) then
-        pool.each do |k,v|
-          instance_variable_set("@#{k}".to_sym,v)
-        end
-        @name.gsub!("_"," ")
-      elsif pool.is_a?(Fixnum) then
-      else raise ArgumentError, "Class #{pool.class} is not recognized in this context."
+      File.open(@@paths["pass"]) do |f|
+        @passwd = f.read.parse
+        @login,@cookie = @passwd["login"],@passwd["cookie"]
       end
+      E621.log.debug("Pool is given as a #{pool.class} object and has the following content: #{pool.inspect}.")
+      @http = E621.connect
+      if pool.is_a?(Fixnum) then
+        pool = @http.post("/pool/show.json","id=#{pool}").body.parse
+      else
+        raise ArgumentError, "Class #{pool.class} is not recognized in this context."
+      end
+      pool.each do |k,v|
+        instance_variable_set("@#{k}".to_sym,v)
+      end
+      @name.gsub!("_"," ")
+    end
+    def is_public?
+      @is_public
+    end
+    # Update function to update this perticular pool.
+    def update(name,is_public,description)
+      is_public = is_public ? 1 : 0
+      r = "id=#@id&pool[name]=#{name}&pool[is_public]=#{is_public}&pool[description]=#{description}&#@login"
+      p @http.post("/pool/update.json",r).body
+      # implement a proper error handling for returned API errors.
     end
     # Show all information of this pool.
     def show
@@ -44,8 +59,8 @@ module E621
       puts " "*2+"Description".bold+":",@description.indent(4)
     end
     # Initialize configuration class wide, so not each instance needs it too.
-    def self.init(config,pathes)
-      @@config,@@pathes = config,pathes
+    def self.init(config,paths)
+      @@config,@@paths = config,paths
     end
   end
 end

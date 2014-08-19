@@ -29,7 +29,7 @@ module E621
       end
       Readline.completer_word_break_characters  = " "
       Readline.completion_append_character      = " "
-      @prompt = "e621.net/pool> ".bold(@color)
+      @prompt = "e621.net/pool"
     end
     # Run module specific updates, if there are any.
     def mod_update
@@ -75,9 +75,7 @@ module E621
 
     def show(buf)
       buf.each do |id|
-        body = @http.post("/pool/show.json","id=#{id}").body.parse
-        p body.keys
-        pool = Pool.new(body)
+        pool = Pool.new(id)
         pool.show
       end
     end
@@ -90,9 +88,9 @@ module E621
           id = id.to_i
           inform_user do
             @user_string = [" "*n," "*6+"0"," "*2+"0/"+" "*2+"0 |"].join(" | ")
-            body = @http.post("/pool/show.json","id=#{id}").body.parse
-            posts,mt = body["posts"],Mutex.new
-            name,max,count = body["name"].gsub("_"," "),body["post_count"],0
+            pool = Pool.new(id)
+            posts,mt = pool.posts,Mutex.new
+            name,max,count = pool.name.gsub("_"," "),pool.post_count,0
             name.gsub!(/[^a-z,_, ,#,0-9,\-]/i,"")
             t = Thread.new do
               page = 2
@@ -123,6 +121,24 @@ module E621
     end
 
     def update(buf)
+      buf.each do |id|
+        id = id.to_i
+        puts  "Please specify all new values. If something should be left " \
+          "unchanged, then just\nkeep that line empty."
+        pool = Pool.new(id)
+        name = Readline.readline("Name [#{pool.name.bold}]: ", false)
+        name = pool.name if name == String.new || name == nil
+        is_public = Readline.readline("Public? #{pool.is_public? ? "[Y/n]" : "[y/N]"}: ", false)
+        is_public = pool.is_public? if is_public == String.new || is_public == nil
+        is_public = is_public.to_s.match(/^y/i) && is_public.is_a?(String) ? true : false
+        description = Readline.readline("Description [#{pool.description}]: ", false)
+        description = pool.description if description == String.new || description == nil
+        if [pool.name,pool.is_public?,pool.description] != [name,is_public,description] then
+          pool.update(name,is_public,description) 
+        else
+          puts "Nothing changed and nothing updated!"
+        end
+      end
     end
 
     def create(buf)
