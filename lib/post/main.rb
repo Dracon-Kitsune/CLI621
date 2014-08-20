@@ -34,7 +34,7 @@ module E621
         File.open(@paths["tasks"],"w"){|f|f.print "{}"}
       end
       Readline.completion_proc = proc do |s|
-        @tags.map{|t|t["name"]}.grep(/^#{s}/)
+        @tags.map{|t|t["name"]}.grep(/^#{Regexp.escape(s)}/)
       end
       Readline.completer_word_break_characters  = " "
       Readline.completion_append_character      = " "
