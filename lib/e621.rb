@@ -18,11 +18,10 @@
 =end
 
 module E621
-  # A global connect function for HTTPS connections.
   def self.connect
-    http = Net::HTTP.new("e621.net",443)
-    http.use_ssl = true
-    return http
+      http = Net::HTTP.new("e621.net",443)
+      http.use_ssl = true
+      return http
   end
   # several helper functions to globalize variables
   def self.debug=(d)
