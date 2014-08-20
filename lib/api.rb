@@ -24,18 +24,27 @@ module E621
     end
     # Variable mod is the module (Post, Pool, Set,...) this API is called for.
     def initialize(mod)
-      @http = Net::HTTP.new("e621.net",443)
-      @http.use_ssl = true
+      @http = E621::HTTP.new("e621.net",443)
       @mod = mod
     end
     # Send commands to API and parse all answers, even errors.
     def post(action,request)
-      r = request2body(r)
+      r,tries = request2body(r),0
       begin
-        json = @http.post("/#@mod/#{action}.json","r").body.parse
+        json = @http.post("/#@mod/#{action}.json",r).body.parse
         if json.include?("success") && !json["success"] then
           raise E621APIError,json["reason"]
         end
+      rescue E621APIError => e
+        E621.log.info("#@mod/#{action} failed: #{e.to_s}")
+      rescue Timeout::Error
+        sleep 2**tries
+        tries += 1
+        E621.log.debug("#@mod/#{action} failed: #{e.class}")
+        raise if tries >= 4
+        # if we see more than 4 timeout errors, then there
+        # is something wrong
+        retry
       end
     end
     private

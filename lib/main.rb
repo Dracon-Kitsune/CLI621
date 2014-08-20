@@ -28,6 +28,7 @@ end
 require "e621"
 require "standard/string"
 #require "standard/hash"
+require "standard/http"
 require "standard/int"
 require "standard/time"
 require "api"
