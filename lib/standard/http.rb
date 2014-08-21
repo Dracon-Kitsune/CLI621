@@ -27,17 +27,19 @@ module E621
     # guaranteed.
     def post(url,request)
       head,body = @http.post(url,request)
+      code = head.code.to_i
       if code > 300 then
-        body = errorcode(head.code) # Emulate a proper API response!
+        body = errorcode(code) # Emulate a proper API response!
       end
       return body
     end
     # Small wrapper function for get calls. This way a proper logging is
     # guaranteed.
-    def get(url)
-      head,body = @http.get(url)
+    def get(url,hash={})
+      head,body = @http.get(url,hash)
+      code = head.code.to_i
       if code > 300 then
-        body = errorcode(head.code) # Emulate a proper API response!
+        body = errorcode(code) # Emulate a proper API response!
       end
       return body
     end

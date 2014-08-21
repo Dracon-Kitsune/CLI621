@@ -21,14 +21,9 @@ module E621
   class Pool
     attr_reader :name,:id,:posts,:is_public,:post_count,:description
     def initialize(pool)
-      File.open(@@paths["pass"]) do |f|
-        @passwd = f.read.parse
-        @login,@cookie = @passwd["login"],@passwd["cookie"]
-      end
-      E621.log.debug("Pool is given as a #{pool.class} object and has the following content: #{pool.inspect}.")
-      @http = HTTP.new
+      @api = API.new("pool")
       if pool.is_a?(Fixnum) then
-        pool = @http.post("/pool/show.json","id=#{pool}").parse
+        pool = @api.post("show",{"id"=>pool})
       else
         raise ArgumentError, "Class #{pool.class} is not recognized in this context."
       end
@@ -43,8 +38,7 @@ module E621
     # Update function to update this perticular pool.
     def update(name,is_public,description)
       is_public = is_public ? 1 : 0
-      r = "id=#@id&pool[name]=#{name}&pool[is_public]=#{is_public}&pool[description]=#{description}&#@login"
-      p @http.post("/pool/update.json",r)
+      r = {"id"=>@id,"pool"=>{"name"=>name,"is_public"=>is_public,"description"=>description}}
       # implement a proper error handling for returned API errors.
     end
     # Show all information of this pool.

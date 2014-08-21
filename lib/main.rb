@@ -75,6 +75,7 @@ module E621
       read_config
       set_logger
       login
+      API.init(@login,@cookie)
       run_updates
       mod_init
       command_loop
