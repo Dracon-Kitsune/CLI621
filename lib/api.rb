@@ -24,20 +24,26 @@ module E621
     end
     # Variable mod is the module (Post, Pool, Set,...) this API is called for.
     def initialize(mod)
-      @http = E621::HTTP.new
+      @http = HTTP.new
       @mod = mod
     end
     # Send commands to API and parse all answers, even errors.
-    def post(action,request)
-      r,tries = request2body(request),0
+    def post(action,request,cookie=false)
+      r,tries = request2body(request,cookie),0
       begin
-        json = @http.post("/#@mod/#{action}.json",r).parse
+        json = if cookie then
+                 @http.post("/#@mod/#{action}.json",r,{"cookie"=>@@cookie}).parse
+               else
+                 @http.post("/#@mod/#{action}.json",r).parse
+               end
         if json.include?("success") && !json["success"] then
           raise E621APIError,json["reason"]
         end
       rescue E621APIError => e
         E621.log.info("#@mod/#{action} failed: #{e.to_s}")
+        raise
       rescue Timeout::Error
+        raise
         sleep 2**tries
         tries += 1
         E621.log.debug("#@mod/#{action} failed: #{e.class}")
@@ -51,7 +57,7 @@ module E621
     private
     # This helper function provides the functionality of translating Ruby Hashes
     # into HTTP POST body strings.
-    def request2body(r)
+    def request2body(r,c)
       s = String.new
       r.each do |k,v|
         s += "&" unless s == String.new
@@ -66,8 +72,9 @@ module E621
           s += "#{k}=#{v}"
         end
       end
-      E621.log.debug("Created request #{s}.")
-      s += "&#@@login"
+      E621.log.debug("Created request \"#{s}\".")
+      s += "&#@@login" if !c
+      return s
     end
   end
 end

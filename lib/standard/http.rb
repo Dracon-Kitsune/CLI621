@@ -25,8 +25,10 @@ module E621
     end
     # Small wrapper function for post calls. This way a proper logging is
     # guaranteed.
-    def post(url,request)
-      head,body = @http.post(url,request)
+    def post(url,request,hash={})
+      E621.log.debug("Downloading #{url}?#{request}.")
+      head,body = @http.post(url,request,hash)
+      E621.log.debug("Downloaded #{url}?#{request}.")
       code = head.code.to_i
       if code > 300 then
         body = errorcode(code) # Emulate a proper API response!

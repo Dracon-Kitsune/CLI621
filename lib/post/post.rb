@@ -29,21 +29,16 @@ module E621
       file = "#{@@paths["posts"]}/#{"0"*(7-id.to_s.length)}#{id}.json"
       E621.log.debug("Post is given as a #{post.class} object and has the following content: #{post.inspect}.")
       if post.is_a?(Fixnum) then
-        @id, @api = post, API.new
+        @id, @api = post, API.new("post")
         post = @api.post("show",{"id"=>@id})
       elsif post.is_a?(Hash) then # If post argument is already a Hash object.
         @id = post["id"]
-        code = 200
       end
-      if code < 300 then
-        @post = post
-        post.each do |k,v|
-          instance_variable_set("@#{k.gsub(/[-]/,"_")}",v)
-        end
-        @created_at = @created_at["s"].to_i if @created_at.is_a?(Hash)
-      else
-        errorcode(code)
+      @post = post
+      post.each do |k,v|
+        instance_variable_set("@#{k.gsub(/[-]/,"_")}",v)
       end
+      @created_at = @created_at["s"].to_i if @created_at.is_a?(Hash)
     end
     # Initialize configuration class wide, so not each instance needs it too.
     def self.init(config,paths)
@@ -56,7 +51,7 @@ module E621
         if direction.abs != 1 then
           raise ArgumentError, "Wrong parameter given. Parameter can only be +1 or -1!"
         end
-        answer = @api.post("/post/vote.json","id=#@id&score=#{direction}&#@login").parse
+        answer = @api.post("vote",{"id"=>@id,"score"=>direction})
         score,success,change = answer["score"],answer["success"],answer["change"]
       rescue
         raise E621APIError, E621.error(@id)
@@ -73,7 +68,7 @@ module E621
       begin
         com,sign = fav ? ["create","+"] : ["destroy","-"]
         # Decide if to favorite or remove a favorite.
-        answer = @api.post("/favorite/#{com}.json","id=#@id",{"cookie"=>@cookie}).parse
+        answer = @api.post(com,{"id"=>@id},true)
         if answer["success"] then # If it works, show it to the user.
           puts "#{sign}Favorite".bold+" succeded on #@id."
         else # If not, show the user that it failed.
@@ -101,7 +96,7 @@ module E621
       # (private) functions.
       begin
         @tags = @tags.split(" ").map{|t|Tag.new(t)}
-        faved = @api.post("/favorite/list_users.json","id=#@id&#@login").parse["favorited_users"].split(",").include?(@passwd["name"])
+        faved = HTTP.new.post("/favorite/list_users.json","id=#@id&#@login").parse["favorited_users"].split(",").include?(@passwd["name"])
         puts " "*2+"Post ##{@id.to_s.bold}",""
         puts " "*4+"Status: #{@status.capitalize.bold}"
         ctime = Time.at(@created_at).strftime("%b %e,%Y %I:%M %p")

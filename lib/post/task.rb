@@ -24,7 +24,7 @@ module E621
     # commands update/download
     def initialize(name,queries,posts=Array.new)
       @name,@queries,@posts = name,queries,posts.map{|o|Post.new(o)}
-      @api = API.new
+      @api = API.new("post")
       @mt = Mutex.new
     end
     # Update this task with a new set of posts. Already updated tasks get
