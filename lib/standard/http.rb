@@ -51,6 +51,8 @@ module E621
                           "We got redirected!"
                         elsif code == 404 then
                           "File not found!"
+                        elsif code == 403 then
+                          "Access denied!"
                         elsif code >= 400 && code < 500 then
                           "We made a bad request!"
                         elsif code >= 500 then
@@ -59,6 +61,7 @@ module E621
                         else
                           raise E621ServerError, "Got strange HTTP code back: #{code}"
                         end
+      return body.to_json
     end
   end
 end

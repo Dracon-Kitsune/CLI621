@@ -128,10 +128,10 @@ module E621
         pool = Pool.new(id)
         name = Readline.readline("Name [#{pool.name.bold}]: ", false)
         name = pool.name if name == String.new || name == nil
-        is_public = Readline.readline("Public? #{pool.is_public? ? "[Y/n]" : "[y/N]"}: ", false)
+        is_public = Readline.readline("Public? #{pool.is_public? ? "["+"Y".bold+"/n]" : "[y/"+"N".bold+"]"}: ", false)
         is_public = pool.is_public? if is_public == String.new || is_public == nil
         is_public = is_public.to_s.match(/^y/i) && is_public.is_a?(String) ? true : false
-        description = Readline.readline("Description [#{pool.description}]: ", false)
+        description = Readline.readline("Description [#{pool.description.bold}]: ", false)
         description = pool.description if description == String.new || description == nil
         if [pool.name,pool.is_public?,pool.description] != [name,is_public,description] then
           pool.update(name,is_public,description) 

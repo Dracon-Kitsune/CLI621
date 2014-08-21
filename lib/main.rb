@@ -53,7 +53,7 @@ module E621
       @home       = File.expand_path("~/.e621/")
       @tmp        = @debug ? "/tmp/e621.debug" : "/tmp/e621" 
       @mt         = Mutex.new
-      @cli        = CLI.new(@home+"/history")
+      @cli        = CLI.new("#@home/history_#@tool")
       @http       = HTTP.new
       @paths     = {
         "tasks"     => "#@tmp/tasks.json",

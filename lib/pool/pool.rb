@@ -39,6 +39,12 @@ module E621
     def update(name,is_public,description)
       is_public = is_public ? 1 : 0
       r = {"id"=>@id,"pool"=>{"name"=>name,"is_public"=>is_public,"description"=>description}}
+      success = @api.post("update",r)
+      if success["success"] then
+        puts "Update on pool \"#{name}\" "+"succeded".bold("green")+"."
+      else
+        puts "Update on pool \"#{name}\" "+"failed".bold("yellow")+" (#{success["reason"].bold})."
+      end
       # implement a proper error handling for returned API errors.
     end
     # Show all information of this pool.

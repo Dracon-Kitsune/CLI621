@@ -41,9 +41,7 @@ module E621
         end
       rescue E621APIError => e
         E621.log.info("#@mod/#{action} failed: #{e.to_s}")
-        raise
       rescue Timeout::Error
-        raise
         sleep 2**tries
         tries += 1
         E621.log.debug("#@mod/#{action} failed: #{e.class}")
