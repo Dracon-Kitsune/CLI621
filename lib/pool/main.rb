@@ -44,16 +44,10 @@ module E621
       ]
       page,body = 1,[""]
       until body == Array.new do
-        request = "query=#{buf.join(" ")}&page=#{page}"
+        request = {"query"=>buf.join(" "),"page"=>page}
         draw_box(content,page == 1 ? true : false) do
-          begin
-            if page == 1 then
-              head,body = @http.post("/pool/index.json",request)
-              body = body.parse
-            end
-          rescue
-            #p head.code
-            raise
+          if page == 1 then
+            body = @api.post("index",request)
           end
           body.each do |pool|
             pool = Pool.new(pool)
@@ -63,7 +57,7 @@ module E621
         if body != Array.new then
           page += 1
           fetch_thread = Thread.new do 
-            body = @http.post("/pool/index.json",request).body.parse
+            body = @api.post("index",request)
           end
           print "Loading next page? [Y/n] "
           input = $stdin.gets.to_s.chomp
@@ -94,8 +88,8 @@ module E621
             name.gsub!(/[^a-z,_, ,#,0-9,\-]/i,"")
             t = Thread.new do
               page = 2
-              until (posts.length >= max || body["posts"] == Array.new) do
-                body = @http.post("/pool/show.json","id=#{id}&page=#{page}").body.parse
+              until (posts.length >= max || pool.posts == Array.new) do
+                body = @api.post("show",{"id"=>id,"page"=>page})
                 mt.synchronize do
                   posts += body["posts"]
                   page += 1
@@ -154,7 +148,7 @@ module E621
     end
 
     # Print out helpful information. X3
-    def help
+    def help(buf)
       puts ["This is a list of all commands:",
         "list SEARCHPATTERN [Always the whole pattern is searched for.]",
         "show ID1 ID2 ID3 ...",

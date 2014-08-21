@@ -177,7 +177,7 @@ module E621
       end
     end
     # Print out helpful information. X3
-    def help
+    def help(buf)
       puts ["This is a list of all commands:",
         "add name:NAME TAG1 [TAG2 TAG3 ...]",
         "remove name:NAME",

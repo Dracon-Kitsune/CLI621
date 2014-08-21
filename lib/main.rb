@@ -55,6 +55,7 @@ module E621
       @mt         = Mutex.new
       @cli        = CLI.new("#@home/history_#@tool")
       @http       = HTTP.new
+      @api        = API.new(@tool)
       @paths     = {
         "tasks"     => "#@tmp/tasks.json",
         "config"    => "#@home/conf.json",
@@ -171,8 +172,8 @@ module E621
         else
           name,pass = get_credentials
         end
-        request = "name=#{name}&password=#{pass}"
-        body = @http.post("/user/login.json",request).parse
+        request = {"name"=>name,"password"=>pass}
+        body = @api.post("login",request)
         if body.has_key?("success") && (!body["success"] || body["success"] = "failed") then
           raise AuthentificationError, "Username or password wrong!"
         else
