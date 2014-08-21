@@ -34,7 +34,25 @@ module E621
         File.open(@paths["tasks"],"w"){|f|f.print "{}"}
       end
       Readline.completion_proc = proc do |s|
-        @tags.map{|t|t["name"]}.grep(/^#{s}/)
+        s = Regexp.escape(s)
+        words   = ["add","update","download","show","voteup","votedown","fav",\
+          "unfav","remove"]
+        words  += Dir["*"].reject{|d|!File.directory?(d)}.map{|d|"name:#{File.basename(d)}"}
+        words  += ["rating:s","rating:q","rating:e"]
+        words  += ["id:","md5:","description:","desc:","pool:","set:","width:",\
+          "height:","score:","favcount:","views:","ration:","parent:"]
+        words  += ["type:jpg","type:png","type:gif","type:swf"]
+        bools   = ["hassource","hasdescription","ischild","idparent","inpool"]
+        words  += bools.map{|b|["#{b}:true","#{b}:false"]}.flatten
+        # Make this a one dimensional array again!
+        words  += ["order:random"]
+        orders  = ["id","score","views","set","favcount","tagcount","comments",\
+          "mpixels","filesize","ratio","desclength"]
+        words  += orders.map{|b|["#{b}_asc","#{b}_desc"]}.flatten.map{|b|"order:#{b}"}
+        # Here we make all orders in both directions and keep it as just an one
+        # dimensional array.
+        words  += @tags.map{|t|t["name"]}
+        words.grep(/^#{s}/)
       end
       Readline.completer_word_break_characters  = " "
       Readline.completion_append_character      = " "

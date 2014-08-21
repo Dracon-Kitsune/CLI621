@@ -1,7 +1,7 @@
 {
   "paths":
   {
-    "post":"~/pictures/e621",
+    "post":"~/pictures/e621/posts",
     "pool":"~/pictures/e621/pools",
     "set":"~/pictures/e621/sets"
   },
