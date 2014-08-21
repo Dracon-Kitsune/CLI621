@@ -64,14 +64,14 @@ module E621
       diff = 0 if File.size(@paths["tags"]) <= 2 # Update if tags are empty!
       if diff.to_i >= 60*60*24*7 then # Just update if cache is older than a week.
         @threads << Thread.new do
-          http = E621.connect
+          http = HTTP.new
           # Report when task starts.
           @log.info "Tags update: start"
           tags,body,page = Array.new,["1"],1
           while body != Array.new do # If no tags are read, end loop.
             request = "limit=100&page=#{page}&order=count&#@login"
             @mt.synchronize do
-              body = http.post("/tag/index.json",request).body.parse
+              body = http.post("/tag/index.json",request).parse
             end
             tags += body.reject{|x|x["name"].match(/[^a-z,_,\-,0-9,\?,\!,\(,\),\[,\],\{,\},\\,\/]/)||x["count"].to_i<=@tag_trash}
             body = Array.new if body.last["count"] < @tag_trash

@@ -32,7 +32,7 @@ module E621
 =begin
         if @@config["cache"] then # Check if we cache anything.
           # Rename post variable to reduce confusion.
-          @id, @http = post, E621.connect
+          @id, @http = post, HTTP.new
           if !File.exist?(file) || File.ctime(file) < Time.now-60*60*24*1 then
             # If not existent or too old, get a fresh one.
             post,code = download_post
@@ -46,7 +46,7 @@ module E621
           end
         else # If we don't cache, always get it straight from the web.
 =end
-          @id, @http = post, E621.connect
+          @id, @http = post, HTTP.new
           header,post = @http.get("/post/show.json?id=#@id&#@login")
           code = header.code.to_i
           post = post.parse if code < 300 # Everything gone good? Good!
@@ -77,7 +77,7 @@ module E621
         if direction.abs != 1 then
           raise ArgumentError, "Wrong parameter given. Parameter can only be +1 or -1!"
         end
-        answer = @http.post("/post/vote.json","id=#@id&score=#{direction}&#@login").body.parse
+        answer = @http.post("/post/vote.json","id=#@id&score=#{direction}&#@login").parse
         score,success,change = answer["score"],answer["success"],answer["change"]
       rescue
         raise E621APIError, E621.error(@id)
@@ -94,7 +94,7 @@ module E621
       begin
         com,sign = fav ? ["create","+"] : ["destroy","-"]
         # Decide if to favorite or remove a favorite.
-        answer = @http.post("/favorite/#{com}.json","id=#@id",{"cookie"=>@cookie}).body.parse
+        answer = @http.post("/favorite/#{com}.json","id=#@id",{"cookie"=>@cookie}).parse
         if answer["success"] then # If it works, show it to the user.
           puts "#{sign}Favorite".bold+" succeded on #@id."
         else # If not, show the user that it failed.
@@ -152,7 +152,7 @@ module E621
       # (private) functions.
       begin
         @tags = @tags.split(" ").map{|t|Tag.new(t)}
-        faved = @http.post("/favorite/list_users.json","id=#@id&#@login").body.parse["favorited_users"].split(",").include?(@passwd["name"])
+        faved = @http.post("/favorite/list_users.json","id=#@id&#@login").parse["favorited_users"].split(",").include?(@passwd["name"])
         puts " "*2+"Post ##{@id.to_s.bold}",""
         puts " "*4+"Status: #{@status.capitalize.bold}"
         ctime = Time.at(@created_at).strftime("%b %e,%Y %I:%M %p")

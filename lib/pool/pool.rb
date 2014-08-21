@@ -26,9 +26,9 @@ module E621
         @login,@cookie = @passwd["login"],@passwd["cookie"]
       end
       E621.log.debug("Pool is given as a #{pool.class} object and has the following content: #{pool.inspect}.")
-      @http = E621.connect
+      @http = HTTP.new
       if pool.is_a?(Fixnum) then
-        pool = @http.post("/pool/show.json","id=#{pool}").body.parse
+        pool = @http.post("/pool/show.json","id=#{pool}").parse
       else
         raise ArgumentError, "Class #{pool.class} is not recognized in this context."
       end
@@ -44,7 +44,7 @@ module E621
     def update(name,is_public,description)
       is_public = is_public ? 1 : 0
       r = "id=#@id&pool[name]=#{name}&pool[is_public]=#{is_public}&pool[description]=#{description}&#@login"
-      p @http.post("/pool/update.json",r).body
+      p @http.post("/pool/update.json",r)
       # implement a proper error handling for returned API errors.
     end
     # Show all information of this pool.

@@ -19,7 +19,7 @@
 
 module E621
   class HTTP
-    def initialize(host,port)
+    def initialize(host="e621.net",port=443)
       @http = Net::HTTP.new(host,port)
       @http.use_ssl = true if port == 443
     end

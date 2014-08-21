@@ -21,8 +21,8 @@ module E621
   class User
     attr_reader :name, :id
     def initialize(id)
-      @http = E621.connect
-      @http.post("/user/index.json","id=#{id}").body.parse.first.each do |k,v|
+      @http = HTTP.new
+      @http.post("/user/index.json","id=#{id}").parse.first.each do |k,v|
         instance_variable_set("@#{k}",v)
       end
       @created_at = Time.parse(@created_at)

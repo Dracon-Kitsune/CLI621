@@ -24,7 +24,7 @@ module E621
     # commands update/download
     def initialize(name,queries,posts=Array.new)
       @name,@queries,@posts = name,queries,posts.map{|o|Post.new(o)}
-      @http = E621.connect
+      @http = HTTP.new
       @mt = Mutex.new
     end
     # Update this task with a new set of posts. Already updated tasks get
@@ -43,10 +43,10 @@ module E621
             # While there are posts, look for more.
             begin
               request = "limit=100&page=#@page&tags=#@query&#@login"
-              body = @http.post("/post/index.json",request).body.parse
+              body = @http.post("/post/index.json",request).parse
               # Fetch an answer and handle intern or extern errors.
               if body.is_a?(Hash) && !body["success"] then
-                $stderr.puts "Your search for #{query.gsub("+"," ".bold)} failed: #{body["reason"].body("red")}."
+                $stderr.puts "Your search for #{query.gsub("+"," ".bold)} failed: #{body["reason"].bold("red")}."
                 body = Array.new
               end
             rescue
