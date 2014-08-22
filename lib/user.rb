@@ -16,13 +16,12 @@
   You should have received a copy of the GNU General Public License
   along with CLI621.  If not, see <http://www.gnu.org/licenses/>.
 =end
-require "net/http"
 module E621
   class User
     attr_reader :name, :id
     def initialize(id)
-      @http = HTTP.new
-      @http.post("/user/index.json","id=#{id}").parse.first.each do |k,v|
+      @api = API.new("user")
+      @api.post("index",{"id"=>id}).first.each do |k,v|
         instance_variable_set("@#{k}",v)
       end
       @created_at = Time.parse(@created_at)

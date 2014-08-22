@@ -26,10 +26,11 @@ module E621
         @passwd = f.read.parse
         @login,@cookie = @passwd["login"],@passwd["cookie"]
       end
+      @api = API.new("post")
       file = "#{@@paths["posts"]}/#{"0"*(7-id.to_s.length)}#{id}.json"
       E621.log.debug("Post is given as a #{post.class} object and has the following content: #{post.inspect}.")
       if post.is_a?(Fixnum) then
-        @id, @api = post, API.new("post")
+        @id = post
         post = @api.post("show",{"id"=>@id})
       elsif post.is_a?(Hash) then # If post argument is already a Hash object.
         @id = post["id"]
@@ -106,7 +107,7 @@ module E621
         puts " "*4+"Parent ID: #{@parent_id.to_s.bold}" if @parent_id
         puts " "*4+"This post has children posts.".bold if @has_children
         if @description != String.new then
-          puts " "*4+"Description: #{@description.to_constr(16)}"
+          puts " "*4+"Description: #{@description}"
         end
         puts " "*4+"Favorite: #{faved ? "Yes".bold("green") : "No".bold("red")}"
         show_tags

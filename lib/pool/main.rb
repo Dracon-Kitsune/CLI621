@@ -170,7 +170,26 @@ module E621
         pool.add(ids)
       end
     end
-
+    # Vote an entire pool up.
+    def voteup(buf)
+      buf.each do |id|
+        pool = Pool.new(id)
+        pool.posts.each do |post|
+          post = Post.new(post)
+          post.vote(1)
+        end
+      end
+    end
+    # Or vote an entire pool down.
+    def votedown(buf)
+      buf.each do |id|
+        pool = Pool.new(id)
+        pool.posts.each do |post|
+          post = Post.new(post)
+          post.vote(-1)
+        end
+      end
+    end
     # Print out helpful information. X3
     def help(buf)
       puts ["This is a list of all commands:",

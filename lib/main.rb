@@ -80,6 +80,7 @@ module E621
       API.init(@login,@cookie)
       run_updates
       mod_init
+      User.new(55747)
       command_loop
     end
     # Check if important files need to be updated and update each in its own
