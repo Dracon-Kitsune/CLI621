@@ -23,6 +23,7 @@ module E621
     def initialize(pool=nil)
       @api = API.new("pool")
       if pool then
+        pool = pool.to_i if pool.is_a?(String)
         if pool.is_a?(Fixnum) then
           pool = @api.post("show",{"id"=>pool})
         elsif pool.is_a?(Hash) then
@@ -41,32 +42,46 @@ module E621
     # Update function to update this perticular pool.
     def update(name,is_public,description)
       is_public = is_public ? 1 : 0
-      r = {"id"=>@id,"pool"=>{"name"=>name,"is_public"=>is_public,"description"=>description}}
-      success = @api.post("update",r)
-      if success["success"] then
-        puts "Update on pool \"#{name}\" "+"succeded".bold("green")+"."
-      else
-        puts "Update on pool \"#{name}\" "+"failed".bold("yellow")+" (#{success["reason"].bold})."
-      end
+      @name = name
+      r = {"id"=>@id,"pool"=>{"name"=>@name,"is_public"=>is_public,"description"=>description}}
+      answer = @api.post("update",r)
+      api_error("Update",answer)
     end
     # Create a new pool.
     def create(name,is_public,description)
       is_public = is_public ? 1 : 0
-      r = {"pool"=>{"name"=>name,"is_public"=>is_public,"description"=>description}}
+      @name = name
+      r = {"pool"=>{"name"=>@name,"is_public"=>is_public,"description"=>description}}
       answer = @api.post("create",r)
-      if answer["success"] then
-        puts "Update on pool \"#{name}\" "+"succeded".bold("green")+"."
-      else
-        puts "Update on pool \"#{name}\" "+"failed".bold("yellow")+" (#{answer["reason"].bold})."
-      end
+      api_error("Creation",answer)
     end
     # Kill this pool!
     def destroy
       answer = @api.post("destroy",{"id"=>@id})
-      if answer["success"] then
-        puts "Deletion of pool \"#{name}\" "+"succeded".bold("green")+"."
-      else
-        puts "Deletion of pool \"#{name}\" "+"failed".bold("yellow")+" (#{answer["reason"].bold})."
+      api_error("Deletion",answer)
+    end
+    # Add posts to this pool.
+    def add(ids)
+      ids.each do |id|
+        answer = @api.post("add_post",{"pool_id"=>@id,"post_id"=>id})
+        if answer["success"] then
+          puts "Added post ##{id} to #@name."
+        else
+          puts "Addind post ##{id} to #@name "+"failed".bold("yellow")+\
+            " ("+answer["reason"].bold+")."
+        end
+      end
+    end
+    # Add posts to this pool.
+    def add(ids)
+      ids.each do |id|
+        answer = @api.post("remove_post",{"pool_id"=>@id,"post_id"=>id})
+        if answer["success"] then
+          puts "Removed post ##{id} from #@name."
+        else
+          puts "Removing post ##{id} from #@name "+"failed".bold("yellow")+\
+            " ("+answer["reason"].bold+")."
+        end
       end
     end
     # Show all information of this pool.
@@ -83,6 +98,15 @@ module E621
     # Initialize configuration class wide, so not each instance needs it too.
     def self.init(config,paths)
       @@config,@@paths = config,paths
+    end
+    private
+    # Centralize error handling a little and save us typing.
+    def api_error(name,answer)
+      if answer["success"] then
+        puts "#{name} of pool \"#@name\" "+"succeded".bold("green")+"."
+      else
+        puts "#{name} of pool \"#@name\" "+"failed".bold("yellow")+" (#{answer["reason"].bold})."
+      end
     end
   end
 end

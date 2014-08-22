@@ -79,7 +79,6 @@ module E621
       content = ["  ","Name".pad(n),"ID".pad(7),"Posts".pad(8)]
       draw_box(content) do
         buf.each do |id|
-          id = id.to_i
           inform_user do
             @user_string = [" "*n," "*6+"0"," "*2+"0/"+" "*2+"0 |"].join(" | ")
             pool = Pool.new(id)
@@ -116,7 +115,6 @@ module E621
 
     def update(buf)
       buf.each do |id|
-        id = id.to_i
         puts  "Please specify all new values. If something should be left " \
           "unchanged, then just\nkeep that line empty."
         pool = Pool.new(id)
@@ -146,14 +144,31 @@ module E621
 
     def destroy(buf)
       buf.each do |id|
-        Pool.new(id.to_i).destroy
+        Pool.new(id).destroy
       end
     end
 
     def add(buf)
+      buf.each do |id|
+        pool = Pool.new(id)
+        puts "Please specify posts that should be added by their ID.",
+          "IDs have to be seperated by spaces only!"
+        ids = Readline.readline("IDs: ", false)
+        ids = ids.split(/\s+/).map{|x|x.to_i} if ids
+        pool.add(ids)
+      end
     end
     # Remove a task from the queue.
     def remove(buf)
+      buf.each do |id|
+        pool = Pool.new(id)
+        posts = pool.posts.map{|x|x["id"]}
+        puts "Pool \"#{pool.name}\" includes the following posts:#$/#{posts.join($/)}",\
+        "Please choose which posts you want to remove from \"#{pool.name}\"."
+        ids = Readline.readline("IDs: ", false)
+        ids = ids.split(/\s+/).map{|x|x.to_i} if ids
+        pool.add(ids)
+      end
     end
 
     # Print out helpful information. X3
