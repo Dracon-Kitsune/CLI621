@@ -20,17 +20,20 @@
 module E621
   class Pool
     attr_reader :name,:id,:posts,:is_public,:post_count,:description
-    def initialize(pool)
+    def initialize(pool=nil)
       @api = API.new("pool")
-      if pool.is_a?(Fixnum) then
-        pool = @api.post("show",{"id"=>pool})
-      else
-        raise ArgumentError, "Class #{pool.class} is not recognized in this context."
+      if pool then
+        if pool.is_a?(Fixnum) then
+          pool = @api.post("show",{"id"=>pool})
+        elsif pool.is_a?(Hash) then
+        else
+          raise ArgumentError, "Class #{pool.class} is not recognized in this context."
+        end
+        pool.each do |k,v|
+          instance_variable_set("@#{k}".to_sym,v)
+        end
+        @name.gsub!("_"," ")
       end
-      pool.each do |k,v|
-        instance_variable_set("@#{k}".to_sym,v)
-      end
-      @name.gsub!("_"," ")
     end
     def is_public?
       @is_public
@@ -45,7 +48,26 @@ module E621
       else
         puts "Update on pool \"#{name}\" "+"failed".bold("yellow")+" (#{success["reason"].bold})."
       end
-      # implement a proper error handling for returned API errors.
+    end
+    # Create a new pool.
+    def create(name,is_public,description)
+      is_public = is_public ? 1 : 0
+      r = {"pool"=>{"name"=>name,"is_public"=>is_public,"description"=>description}}
+      answer = @api.post("create",r)
+      if answer["success"] then
+        puts "Update on pool \"#{name}\" "+"succeded".bold("green")+"."
+      else
+        puts "Update on pool \"#{name}\" "+"failed".bold("yellow")+" (#{answer["reason"].bold})."
+      end
+    end
+    # Kill this pool!
+    def destroy
+      answer = @api.post("destroy",{"id"=>@id})
+      if answer["success"] then
+        puts "Deletion of pool \"#{name}\" "+"succeded".bold("green")+"."
+      else
+        puts "Deletion of pool \"#{name}\" "+"failed".bold("yellow")+" (#{answer["reason"].bold})."
+      end
     end
     # Show all information of this pool.
     def show

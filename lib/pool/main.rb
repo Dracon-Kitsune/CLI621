@@ -136,9 +136,18 @@ module E621
     end
 
     def create(buf)
+      name = Readline.readline("Name: ", false)
+      is_public = Readline.readline("Public?["+"Y".bold+"/n]: ", false)
+      is_public = "y" if is_public == String.new || is_public == nil
+      is_public = is_public.to_s.match(/^y/i) && is_public.is_a?(String) ? true : false
+      description = Readline.readline("Description: ", false)
+      Pool.new.create(name,is_public,description)
     end
 
     def destroy(buf)
+      buf.each do |id|
+        Pool.new(id.to_i).destroy
+      end
     end
 
     def add(buf)
