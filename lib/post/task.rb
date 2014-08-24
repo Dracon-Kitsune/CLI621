@@ -24,15 +24,13 @@ module E621
     # commands update/download
     def initialize(name,queries,posts=Array.new)
       @name,@queries,@posts = name,queries,posts.map{|o|Post.new(o)}
-      @http = E621.connect
+      @api = API.new("post")
       @mt = Mutex.new
     end
     # Update this task with a new set of posts. Already updated tasks get
     # ignored to speed things up.
     def update
-      File.open(@@pathes["blacklist"]) do |f|
-        @bad_tags = f.read.parse.join("|") # Prepare our set of unwanted tags.
-      end
+      @bad_tags = $user.blacklisted.join("|") # Prepare our set of unwanted tags.
       @queries.each do |q|
         next if q["updated"]
         body,@page = [1],1
@@ -42,11 +40,11 @@ module E621
           while body != Array.new do
             # While there are posts, look for more.
             begin
-              request = "limit=100&page=#@page&tags=#@query&#@login"
-              body = @http.post("/post/index.json",request).body.parse
+              request = {"limit"=>100,"page"=>@page,"tags"=>@query}
+              body = @api.post("index",request)
               # Fetch an answer and handle intern or extern errors.
               if body.is_a?(Hash) && !body["success"] then
-                $stderr.puts "Your search for #{query.gsub("+"," ".bold)} failed: #{body["reason"].body("red")}."
+                $stderr.puts "Your search for #{query.gsub("+"," ".bold)} failed: #{body["reason"].bold("red")}."
                 body = Array.new
               end
             rescue

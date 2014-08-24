@@ -1,3 +1,13 @@
+v0.3
+  + pool create/destroy
+  + pool add/remove
+  + pool update
+  + pool voteup/votedown
+  + pool fav/unfav
+  + an User class, that contains important user data (blacklists)
+  + an API class, for streamlined API access
+  + several more complete code based changes for better debugging and
+    performance
 v0.2
   + pools can be listed by search strings
   + download of whole pools

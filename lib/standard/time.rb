@@ -16,34 +16,15 @@
   You should have received a copy of the GNU General Public License
   along with CLI621.  If not, see <http://www.gnu.org/licenses/>.
 =end
-
-module E621
-  # several helper functions to globalize variables
-  def self.debug=(d)
-    @@debug = d
+class Time
+  # A general to_s function for Time objects.
+  def to_s
+    self.strftime("%b %e,%Y %I:%M %p")
   end
-
-  def self.debug
-    @@debug
-  end
-
-  def self.log=(l)
-    @@log = l
-  end
-
-  def self.log
-    @@log
-  end
-  # This is a general error handling method and should be put into an error
-  # class.
-  def self.error(id)
-    if $!.to_s.length < 512 then
-      "Post ##{id} caused an error: #$!"
-    else
-      $!.to_s =~ /<pre>.+<\/pre>/
-      err = $~.to_s
-      err = err.gsub(/<pre>|<\/pre>/,"").gsub("&gt;",">").gsub("&lt;","<").gsub("&#39","'")
-      "Post ##{id} caused a remote error: #{err}."
-    end
+  # This methods takes a block and returns how long it took to execute block.
+  def self.measure
+    s = Time.now
+    yield
+    return Time.now-s
   end
 end

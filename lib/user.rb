@@ -16,34 +16,30 @@
   You should have received a copy of the GNU General Public License
   along with CLI621.  If not, see <http://www.gnu.org/licenses/>.
 =end
-
 module E621
-  # several helper functions to globalize variables
-  def self.debug=(d)
-    @@debug = d
-  end
-
-  def self.debug
-    @@debug
-  end
-
-  def self.log=(l)
-    @@log = l
-  end
-
-  def self.log
-    @@log
-  end
-  # This is a general error handling method and should be put into an error
-  # class.
-  def self.error(id)
-    if $!.to_s.length < 512 then
-      "Post ##{id} caused an error: #$!"
-    else
-      $!.to_s =~ /<pre>.+<\/pre>/
-      err = $~.to_s
-      err = err.gsub(/<pre>|<\/pre>/,"").gsub("&gt;",">").gsub("&lt;","<").gsub("&#39","'")
-      "Post ##{id} caused a remote error: #{err}."
+  class User
+    attr_reader :name, :id, :blacklisted
+    def initialize(user)
+      @api = API.new("user")
+      if user.is_a?(Fixnum) then
+        set_vars(@api.post("index",{"id"=>user}).first)
+      elsif user.is_a?(String) then
+        set_vars(@api.post("index",{"name"=>user}).first)
+      elsif user.is_a?(Hash) then
+        set_vars(user)
+      end
+      @created_at = Time.parse(@created_at)
+    end
+    # Update user data, like blacklists.
+    def update
+      set_vars(@api.post("index",{"id"=>@id}).first)
+    end
+    private
+    # A little helper to reduce repeative code.
+    def set_vars(hash)
+      hash.each do |k,v|
+        instance_variable_set("@#{k}",v)
+      end
     end
   end
 end

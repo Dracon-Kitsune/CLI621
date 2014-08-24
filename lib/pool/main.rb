@@ -29,7 +29,7 @@ module E621
       end
       Readline.completer_word_break_characters  = " "
       Readline.completion_append_character      = " "
-      @prompt = "e621.net/pool> ".bold(@color)
+      @prompt = "/pool"
     end
     # Run module specific updates, if there are any.
     def mod_update
@@ -44,26 +44,20 @@ module E621
       ]
       page,body = 1,[""]
       until body == Array.new do
-        request = "query=#{buf.join(" ")}&page=#{page}"
+        request = {"query"=>buf.join(" "),"page"=>page}
         draw_box(content,page == 1 ? true : false) do
-          begin
-            if page == 1 then
-              head,body = @http.post("/pool/index.json",request)
-              body = body.parse
-            end
-          rescue
-            #p head.code
-            raise
+          if page == 1 then
+            body = @api.post("index",request)
           end
           body.each do |pool|
             pool = Pool.new(pool)
-            puts "| #{pool.id.pad(7," ")} | #{pool.name.pad(49)} | #{pool.post_count.pad(5," ")} | #{pool.public ? "Yes   ".bold("green") : "No    ".bold("yellow")} |"
+            puts "| #{pool.id.pad(7," ")} | #{pool.name.pad(49)} | #{pool.post_count.pad(5," ")} | #{pool.is_public ? "Yes   ".bold("green") : "No    ".bold("yellow")} |"
           end
         end
         if body != Array.new then
           page += 1
           fetch_thread = Thread.new do 
-            body = @http.post("/pool/index.json",request).body.parse
+            body = @api.post("index",request)
           end
           print "Loading next page? [Y/n] "
           input = $stdin.gets.to_s.chomp
@@ -74,9 +68,10 @@ module E621
     end
 
     def show(buf)
-      #buf.each do |id|
-      #  p @http.post("/pool/show.json","id=#{id}").body.parse.keys
-      #end
+      buf.each do |id|
+        pool = Pool.new(id)
+        pool.show
+      end
     end
 
     def download(buf)
@@ -84,17 +79,16 @@ module E621
       content = ["  ","Name".pad(n),"ID".pad(7),"Posts".pad(8)]
       draw_box(content) do
         buf.each do |id|
-          id = id.to_i
           inform_user do
             @user_string = [" "*n," "*6+"0"," "*2+"0/"+" "*2+"0 |"].join(" | ")
-            body = @http.post("/pool/show.json","id=#{id}").body.parse
-            posts,mt = body["posts"],Mutex.new
-            name,max,count = body["name"].gsub("_"," "),body["post_count"],0
+            pool = Pool.new(id)
+            posts,mt = pool.posts,Mutex.new
+            name,max,count = pool.name.gsub("_"," "),pool.post_count,0
             name.gsub!(/[^a-z,_, ,#,0-9,\-]/i,"")
             t = Thread.new do
               page = 2
-              until (posts.length >= max || body["posts"] == Array.new) do
-                body = @http.post("/pool/show.json","id=#{id}&page=#{page}").body.parse
+              until (posts.length >= max || pool.posts == Array.new) do
+                body = @api.post("show",{"id"=>id,"page"=>page})
                 mt.synchronize do
                   posts += body["posts"]
                   page += 1
@@ -120,22 +114,104 @@ module E621
     end
 
     def update(buf)
+      buf.each do |id|
+        puts  "Please specify all new values. If something should be left " \
+          "unchanged, then just\nkeep that line empty."
+        pool = Pool.new(id)
+        name = Readline.readline("Name [#{pool.name.bold}]: ", false)
+        name = pool.name if name == String.new || name == nil
+        is_public = Readline.readline("Public? #{pool.is_public? ? "["+"Y".bold+"/n]" : "[y/"+"N".bold+"]"}: ", false)
+        is_public = pool.is_public? if is_public == String.new || is_public == nil
+        is_public = is_public.to_s.match(/^y/i) && is_public.is_a?(String) ? true : false
+        description = Readline.readline("Description [#{pool.description.bold}]: ", false)
+        description = pool.description if description == String.new || description == nil
+        if [pool.name,pool.is_public?,pool.description] != [name,is_public,description] then
+          pool.update(name,is_public,description) 
+        else
+          puts "Nothing changed and nothing updated!"
+        end
+      end
     end
 
     def create(buf)
+      name = Readline.readline("Name: ", false)
+      is_public = Readline.readline("Public?["+"Y".bold+"/n]: ", false)
+      is_public = "y" if is_public == String.new || is_public == nil
+      is_public = is_public.to_s.match(/^y/i) && is_public.is_a?(String) ? true : false
+      description = Readline.readline("Description: ", false)
+      Pool.new.create(name,is_public,description)
     end
 
     def destroy(buf)
+      buf.each do |id|
+        Pool.new(id).destroy
+      end
     end
 
     def add(buf)
+      buf.each do |id|
+        pool = Pool.new(id)
+        puts "Please specify posts that should be added by their ID.",
+          "IDs have to be seperated by spaces only!"
+        ids = Readline.readline("IDs: ", false)
+        ids = ids.split(/\s+/).map{|x|x.to_i} if ids
+        pool.add(ids)
+      end
     end
     # Remove a task from the queue.
     def remove(buf)
+      buf.each do |id|
+        pool = Pool.new(id)
+        posts = pool.posts.map{|x|x["id"]}
+        puts "Pool \"#{pool.name}\" includes the following posts:#$/#{posts.join($/)}",\
+        "Please choose which posts you want to remove from \"#{pool.name}\"."
+        ids = Readline.readline("IDs: ", false)
+        ids = ids.split(/\s+/).map{|x|x.to_i} if ids
+        pool.add(ids)
+      end
     end
-
+    # Vote an entire pool up.
+    def voteup(buf)
+      buf.each do |id|
+        pool = Pool.new(id)
+        pool.posts.each do |post|
+          post = Post.new(post)
+          post.vote(1)
+        end
+      end
+    end
+    # Or vote an entire pool down.
+    def votedown(buf)
+      buf.each do |id|
+        pool = Pool.new(id)
+        pool.posts.each do |post|
+          post = Post.new(post)
+          post.vote(-1)
+        end
+      end
+    end
+    # Vote an entire pool up.
+    def fav(buf)
+      buf.each do |id|
+        pool = Pool.new(id)
+        pool.posts.each do |post|
+          post = Post.new(post)
+          post.fav
+        end
+      end
+    end
+    # Or vote an entire pool down.
+    def unfav(buf)
+      buf.each do |id|
+        pool = Pool.new(id)
+        pool.posts.each do |post|
+          post = Post.new(post)
+          post.fav(false)
+        end
+      end
+    end
     # Print out helpful information. X3
-    def help
+    def help(buf)
       puts ["This is a list of all commands:",
         "list SEARCHPATTERN [Always the whole pattern is searched for.]",
         "show ID1 ID2 ID3 ...",

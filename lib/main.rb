@@ -27,9 +27,14 @@ rescue LoadError
 end
 require "e621"
 require "standard/string"
-require "standard/hash"
+#require "standard/hash"
+require "standard/http"
 require "standard/int"
+require "standard/time"
+require "error"
+require "api"
 require "tag"
+require "user"
 
 module E621
   class Main
@@ -48,8 +53,9 @@ module E621
       @home       = File.expand_path("~/.e621/")
       @tmp        = @debug ? "/tmp/e621.debug" : "/tmp/e621" 
       @mt         = Mutex.new
-      @cli        = CLI.new(@home+"/history")
-      @http       = E621.connect
+      @cli        = CLI.new("#@home/history_#@tool")
+      @http       = HTTP.new
+      @api        = API.new(@tool)
       @paths     = {
         "tasks"     => "#@tmp/tasks.json",
         "config"    => "#@home/conf.json",
@@ -66,13 +72,16 @@ module E621
     end
     # Start most of the needed helper functions and set up last things.
     def init
-      # first of all, create a temporary directory
-      Dir.mkdir(@tmp) unless File.exist?(@tmp)
-      read_config
-      set_logger
-      login
-      run_updates
-      mod_init
+      t = Time.measure do
+        # first of all, create a temporary directory
+        Dir.mkdir(@tmp) unless File.exist?(@tmp)
+        read_config
+        set_logger
+        login
+        run_updates
+        mod_init
+      end
+      E621.log.debug("Startup time: #{t.round(3)} s")
       command_loop
     end
     # Check if important files need to be updated and update each in its own
@@ -83,21 +92,8 @@ module E621
       # to x minutes. Value is randomly chosen, to reduce impact on site.
       @threads << Thread.new do
         loop do
-          http = E621.connect
-          @mt.synchronize do
-            head,body = http.get("/post",{"cookie"=>@cookie.to_s})
-            @cookie = head["set-cookie"]
-            @cookie =~ /(?<=blacklisted_tags=).+?(?=;)/
-            blacklist = $~.to_s
-            if blacklist != String.new then
-              File.open(@paths["blacklist"],"w") do |f|
-                f.print blacklist.split("&").to_json
-              end
-            end
-            @passwd["cookie"] = @cookie 
-            File.open(@paths["pass"],"w"){|f|f.print @passwd.to_json}
-          end
           sleep(rand(60*5))
+          $user.update
         end
       end
       mod_update
@@ -146,42 +142,8 @@ module E621
     # Use user credentials to log them in on two levels. API and site login are
     # used.
     def login
-      #Load all user credentials into one variable.
-      File.open(@paths["pass"]){|f|@passwd=f.read.parse}
-      @login,@cookie = @passwd["login"],@passwd["cookie"]
-      name,pass = String.new, String.new
-      # Perform a re-login if the last time is older than x days.
-      if (Time.now.to_i-@passwd["last_login"].to_i) > 60*60*24*3 then
-        if @config["auto_login"] then
-          @http.get("/user/logout",{"cookie"=>@cookie.to_s}) if @cookie
-          if @passwd["name"] != "" && @passwd["pass"] != "" then
-            name,pass = @passwd["name"],@passwd["pass"]
-          else
-            puts "No user data found. Please provide user data."
-            name,pass = get_credentials
-            @passwd["name"],@passwd["pass"] = name,pass
-            # Store that data for later use.
-          end
-        else
-          name,pass = get_credentials
-        end
-        request = "name=#{name}&password=#{pass}"
-        body = @http.post("/user/login.json",request).body.parse
-        if body.has_key?("success") && (!body["success"] || body["success"] = "failed") then
-          raise AuthentificationError, "Username or password wrong!"
-        else
-          @login = "login=#{body["name"]}&password_hash=#{body["password_hash"]}"
-          @passwd["login"] = @login # Save login string for later use.
-        end
-        request = "url=&user%5Bname%5D=#{@passwd["name"]}&user%5Bpassword%5D=#{@passwd["pass"]}&user%5Broaming%5D=1"
-        # Log in user on site, after logging into API is done.
-        head,body = @http.post("/user/authenticate",request)
-        @cookie = head["set-cookie"]
-        @passwd["cookie"] = @cookie 
-        @passwd["last_login"] = Time.now.to_i
-        # Write everything back!
-        File.open(@paths["pass"],"w"){|f|f.print @passwd.to_json}
-      end
+      name = API.login(@paths,@config["auto_login"])
+      $user = User.new(name)
     end
     # Draw a neat box around our input. Function expects a block.
     def draw_box(content,header=true)
@@ -196,21 +158,10 @@ module E621
       yield
       puts border
     end
-    # If there is no data saved for login, ask the user. They must know!
-    def get_credentials
-      print "Username: "
-      name = $stdin.gets.chomp
-      if $stdin.respond_to?(:noecho) then
-        print "Password: "
-        pass = $stdin.noecho(&:gets).chomp
-      else
-        pass = `read -s -p "Password: " pass; echo $pass`.chomp
-      end
-      return [name,pass]
-    end
     # The main function of this program and UI.
     def command_loop
-      while buff = Readline.readline(@prompt, false) do
+      prompt = "#{$user.name}@e621.net#@prompt> "
+      while buff = Readline.readline(prompt.bold(@color), false) do
         if !(buff == String.new || buff == Readline::HISTORY.to_a.last) then
           Readline::HISTORY << buff
           @cli.history.puts buff
