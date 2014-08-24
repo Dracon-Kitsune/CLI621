@@ -190,6 +190,26 @@ module E621
         end
       end
     end
+    # Vote an entire pool up.
+    def fav(buf)
+      buf.each do |id|
+        pool = Pool.new(id)
+        pool.posts.each do |post|
+          post = Post.new(post)
+          post.fav
+        end
+      end
+    end
+    # Or vote an entire pool down.
+    def unfav(buf)
+      buf.each do |id|
+        pool = Pool.new(id)
+        pool.posts.each do |post|
+          post = Post.new(post)
+          post.fav(false)
+        end
+      end
+    end
     # Print out helpful information. X3
     def help(buf)
       puts ["This is a list of all commands:",

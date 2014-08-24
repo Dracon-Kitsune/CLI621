@@ -48,15 +48,11 @@ module E621
     # Vote a post up or done. The argument "direction" indicates if it is an up
     # vote or down vote. Possible values are +1 or -1.
     def vote(direction)
-      begin
-        if direction.abs != 1 then
-          raise ArgumentError, "Wrong parameter given. Parameter can only be +1 or -1!"
-        end
-        answer = @api.post("vote",{"id"=>@id,"score"=>direction})
-        score,success,change = answer["score"],answer["success"],answer["change"]
-      rescue
-        raise E621APIError, E621.error(@id)
+      if direction.abs != 1 then
+        raise ArgumentError, "Wrong parameter given. Parameter can only be +1 or -1!"
       end
+      answer = @api.post("vote",{"id"=>@id,"score"=>direction})
+      score,success,change = answer["score"],answer["success"],answer["change"]
       if success then
         puts "  #@id #{score.to_i-change} -> #{score}"
       else
@@ -66,17 +62,14 @@ module E621
     end
     # Favorite or unfavorite a post.
     def fav(fav=true)
-      begin
-        com,sign = fav ? ["create","+"] : ["destroy","-"]
-        # Decide if to favorite or remove a favorite.
-        answer = @api.post(com,{"id"=>@id},true)
-        if answer["success"] then # If it works, show it to the user.
-          puts "#{sign}Favorite".bold+" succeded on #@id."
-        else # If not, show the user that it failed.
-          puts "#{sign}Favorite".bold+" failed on #@id: #{answer["reason"]}"
-        end
-      rescue
-        raise E621APIError, E621.error(@id)
+      api = API.new("favorite")
+      com,sign = fav ? ["create","+"] : ["destroy","-"]
+      # Decide if to favorite or remove a favorite.
+      answer = api.post(com,{"id"=>@id},true)
+      if answer["success"] then # If it works, show it to the user.
+        puts "#{sign}Favorite".bold+" succeded on #@id."
+      else # If not, show the user that it failed.
+        puts "#{sign}Favorite".bold+" failed on #@id: #{answer["reason"]}"
       end
     end
     # Just a custom to_json function.

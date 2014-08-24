@@ -158,8 +158,9 @@ module E621
       File.open(@paths["pass"]){|f|@passwd=f.read.parse}
       @login,@cookie = @passwd["login"],@passwd["cookie"]
       name,pass = String.new, String.new
-      # Perform a re-login if the last time is older than x days.
-      if (Time.now.to_i-@passwd["last_login"].to_i) > 60*60*24*3 then
+      # Perform a re-login if the last time is older than x days. Or if there is
+      # no cookie.
+      if (Time.now.to_i-@passwd["last_login"].to_i) > 60*60*24*3 || !@cookie then
         if @config["auto_login"] then
           @http.get("/user/logout",{"cookie"=>@cookie.to_s}) if @cookie
           if @passwd["name"] != "" && @passwd["pass"] != "" then
@@ -173,8 +174,8 @@ module E621
         else
           name,pass = get_credentials
         end
-        request = {"name"=>name,"password"=>pass}
-        body = @api.post("login",request)
+        request = "name=#{name}&password=#{pass}"
+        body = @http.post("/user/login.json",request).parse
         if body.has_key?("success") && (!body["success"] || body["success"] = "failed") then
           raise AuthentificationError, "Username or password wrong!"
         else
@@ -183,7 +184,7 @@ module E621
         end
         request = "url=&user%5Bname%5D=#{@passwd["name"]}&user%5Bpassword%5D=#{@passwd["pass"]}&user%5Broaming%5D=1"
         # Log in user on site, after logging into API is done.
-        head,body = @http.post("/user/authenticate",request)
+        head = @http.head("/user/authenticate",request)
         @cookie = head["set-cookie"]
         @passwd["cookie"] = @cookie 
         @passwd["last_login"] = Time.now.to_i

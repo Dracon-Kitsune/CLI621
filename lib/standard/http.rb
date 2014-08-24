@@ -30,9 +30,19 @@ module E621
       E621.log.debug(body)
       code = head.code.to_i
       if code > 300 then
-        body = errorcode(code) # Emulate a proper API response!
+        body = errorcode(code,url) # Emulate a proper API response!
       end
       return body
+    end
+    # Small wrapper for calls where only header information are needed.
+    def head(url,request)
+      head,body = @http.post(url,request)
+      E621.log.debug(body)
+      code = head.code.to_i
+      if code > 300 then
+        body = errorcode(code,url) # Emulate a proper API response!
+      end
+      return head
     end
     # Small wrapper function for get calls. This way a proper logging is
     # guaranteed.
@@ -40,11 +50,11 @@ module E621
       head,body = @http.get(url,hash)
       code = head.code.to_i
       if code > 300 then
-        body = errorcode(code) # Emulate a proper API response!
+        body = errorcode(code,url) # Emulate a proper API response!
       end
       return body
     end
-    def errorcode(code)
+    def errorcode(code,url)
       body = {"success"=>false,"reason"=>""}
       body["reason"] =  if code >= 300 && code < 400 then
                           "We got redirected!"
@@ -55,7 +65,7 @@ module E621
                         elsif code >= 400 && code < 500 then
                           "We made a bad request!"
                         elsif code >= 500 then
-                          E621.log.error("Server side error! Url used: #{url} (#{code})")
+                          E621.log.fatal("Server side error! Url used: #{url} (#{code})")
                           raise E621ServerError, code
                         else
                           raise E621ServerError, "Got strange HTTP code back: #{code}"
