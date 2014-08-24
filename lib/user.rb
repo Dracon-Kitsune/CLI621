@@ -21,8 +21,16 @@ module E621
     attr_reader :name, :id
     def initialize(id)
       @api = API.new("user")
-      @api.post("index",{"id"=>id}).first.each do |k,v|
-        instance_variable_set("@#{k}",v)
+      if id.is_a?(Fixnum) then
+        @api.post("index",{"id"=>id}).first.each do |k,v|
+          p [k,v]
+          instance_variable_set("@#{k}",v)
+        end
+      elsif id.is_a?(String) then
+        @api.post("index",{"name"=>id}).first.each do |k,v|
+          p [k,v]
+          instance_variable_set("@#{k}",v)
+        end
       end
       @created_at = Time.parse(@created_at)
     end

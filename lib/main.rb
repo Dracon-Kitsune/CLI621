@@ -77,10 +77,8 @@ module E621
       read_config
       set_logger
       login
-      API.init(@login,@cookie)
       run_updates
       mod_init
-      User.new(55747)
       command_loop
     end
     # Check if important files need to be updated and update each in its own
@@ -176,6 +174,7 @@ module E621
         end
         request = "name=#{name}&password=#{pass}"
         body = @http.post("/user/login.json",request).parse
+        p body
         if body.has_key?("success") && (!body["success"] || body["success"] = "failed") then
           raise AuthentificationError, "Username or password wrong!"
         else
@@ -190,6 +189,8 @@ module E621
         @passwd["last_login"] = Time.now.to_i
         # Write everything back!
         File.open(@paths["pass"],"w"){|f|f.print @passwd.to_json}
+        API.init(@login,@cookie)
+        @user = User.new(@passwd["name"])
       end
     end
     # Draw a neat box around our input. Function expects a block.

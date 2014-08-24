@@ -60,6 +60,7 @@ module E621
     end
     # Run module specific updates, if there are any.
     def mod_update
+      File.open(@paths["tags"],"w"){|t|t.print "[]"} if !File.exists?(@paths["tags"])
       diff = Time.now-File.mtime(@paths["tags"])
       diff = 0 if File.size(@paths["tags"]) <= 2 # Update if tags are empty!
       if diff.to_i >= 60*60*24*7 then # Just update if cache is older than a week.
