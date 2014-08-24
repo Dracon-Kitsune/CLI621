@@ -28,7 +28,7 @@ module E621
       end
       @api = API.new("post")
       file = "#{@@paths["posts"]}/#{"0"*(7-id.to_s.length)}#{id}.json"
-      E621.log.debug("Post is given as a #{post.class} object and has the following content: #{post.inspect}.")
+      #E621.log.debug("Post is given as a #{post.class} object and has the following content: #{post.inspect}.")
       if post.is_a?(Fixnum) then
         @id = post
         post = @api.post("show",{"id"=>@id})

@@ -30,10 +30,7 @@ module E621
     # Update this task with a new set of posts. Already updated tasks get
     # ignored to speed things up.
     def update
-      File.open(@paths["blacklist"],"w"){|t|t.print "[]"} if !File.exists?(@paths["blacklist"])
-      File.open(@@pathes["blacklist"]) do |f|
-        @bad_tags = f.read.parse.join("|") # Prepare our set of unwanted tags.
-      end
+      @bad_tags = $user.blacklisted.join("|") # Prepare our set of unwanted tags.
       @queries.each do |q|
         next if q["updated"]
         body,@page = [1],1

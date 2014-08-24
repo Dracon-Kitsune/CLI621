@@ -17,7 +17,14 @@
   along with CLI621.  If not, see <http://www.gnu.org/licenses/>.
 =end
 class Time
+  # A general to_s function for Time objects.
   def to_s
     self.strftime("%b %e,%Y %I:%M %p")
+  end
+  # This methods takes a block and returns how long it took to execute block.
+  def self.measure
+    s = Time.now
+    yield
+    return Time.now-s
   end
 end

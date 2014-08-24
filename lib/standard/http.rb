@@ -26,8 +26,9 @@ module E621
     # Small wrapper function for post calls. This way a proper logging is
     # guaranteed.
     def post(url,request,hash={})
+      head,body = nil,nil
       head,body = @http.post(url,request,hash)
-      E621.log.debug(body)
+      E621.log.debug("POST #{url}?#{request} :#{body}")
       code = head.code.to_i
       if code > 300 then
         body = errorcode(code,url) # Emulate a proper API response!
@@ -37,7 +38,7 @@ module E621
     # Small wrapper for calls where only header information are needed.
     def head(url,request)
       head,body = @http.post(url,request)
-      E621.log.debug(body)
+      E621.log.debug("HEAD #{url}?#{request}: #{body}")
       code = head.code.to_i
       if code > 300 then
         body = errorcode(code,url) # Emulate a proper API response!
@@ -48,6 +49,7 @@ module E621
     # guaranteed.
     def get(url,hash={})
       head,body = @http.get(url,hash)
+      E621.log.debug("GET #{url}?#{request}: #{body}")
       code = head.code.to_i
       if code > 300 then
         body = errorcode(code,url) # Emulate a proper API response!

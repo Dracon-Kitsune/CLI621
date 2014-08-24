@@ -18,21 +18,28 @@
 =end
 module E621
   class User
-    attr_reader :name, :id
-    def initialize(id)
+    attr_reader :name, :id, :blacklisted
+    def initialize(user)
       @api = API.new("user")
-      if id.is_a?(Fixnum) then
-        @api.post("index",{"id"=>id}).first.each do |k,v|
-          p [k,v]
-          instance_variable_set("@#{k}",v)
-        end
-      elsif id.is_a?(String) then
-        @api.post("index",{"name"=>id}).first.each do |k,v|
-          p [k,v]
-          instance_variable_set("@#{k}",v)
-        end
+      if user.is_a?(Fixnum) then
+        set_vars(@api.post("index",{"id"=>user}).first)
+      elsif user.is_a?(String) then
+        set_vars(@api.post("index",{"name"=>user}).first)
+      elsif user.is_a?(Hash) then
+        set_vars(user)
       end
       @created_at = Time.parse(@created_at)
+    end
+    # Update user data, like blacklists.
+    def update
+      set_vars(@api.post("index",{"id"=>@id}).first)
+    end
+    private
+    # A little helper to reduce repeative code.
+    def set_vars(hash)
+      hash.each do |k,v|
+        instance_variable_set("@#{k}",v)
+      end
     end
   end
 end

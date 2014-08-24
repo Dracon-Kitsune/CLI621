@@ -19,11 +19,51 @@
 
 module E621
   class API
-    def self.init(login,cookie)
-      @@login,@@cookie = login,cookie
+    # Perform an API and site login, to get maximum access.
+    def self.login(paths,auto)
+      #Load all user credentials into one variable.
+      passwd = nil
+      File.open(paths["pass"]){|f|passwd=f.read.parse}
+      @@login,@@cookie = passwd["login"],passwd["cookie"]
+      name,pass = String.new, String.new
+      # Perform a re-login if the last time is older than x days. Or if there is
+      # no cookie.
+      if (Time.now.to_i-passwd["last_login"].to_i) > 60*60*24*3 || !@@cookie then
+        if auto then
+          @http.get("/user/logout",{"cookie"=>@@cookie.to_s}) if @@cookie
+          if passwd["name"] != "" && passwd["pass"] != "" then
+            name,pass = passwd["name"],passwd["pass"]
+          else
+            puts "No user data found. Please provide user data."
+            name,pass = get_credentials
+            passwd["name"],passwd["pass"] = name,pass
+            # Store that data for later use.
+          end
+        else
+          name,pass = get_credentials
+        end
+        request = "name=#{name}&password=#{pass}"
+        http = HTTP.new
+        body = http.post("/user/login.json",request).parse
+        if body.has_key?("success") && (!body["success"] || body["success"] = "failed") then
+          raise AuthentificationError, "Username or password wrong!"
+        else
+          @@login = "login=#{body["name"]}&password_hash=#{body["password_hash"]}"
+          passwd["login"] = @login # Save login string for later use.
+        end
+        request = "url=&user[name]=#{passwd["name"]}&user[password]=#{passwd["pass"]}&user[roaming]=1"
+        # Log in user on site, after logging into API is done.
+        head = http.head("/user/authenticate",request)
+        @@cookie = head["set-cookie"]
+        passwd["cookie"] = @@cookie 
+        passwd["last_login"] = Time.now.to_i
+        # Write everything back!
+        File.open(paths["pass"],"w"){|f|f.print passwd.to_json}
+      end
+      return passwd["name"]
     end
     # Variable mod is the module (Post, Pool, Set,...) this API is called for.
-    def initialize(mod)
+    def initialize(mod,paths=nil,auto=true)
       @http = HTTP.new
       @mod = mod
     end
@@ -73,6 +113,19 @@ module E621
       E621.log.debug("Created request \"#{s}\".")
       s += "&#@@login" if !c
       return s
+    end
+    # If there is no data saved for login, ask the user. They must know!
+    def self.get_credentials
+      print "Username: "
+      name = $stdin.gets.chomp
+      if $stdin.respond_to?(:noecho) then
+        print "Password: "
+        pass = $stdin.noecho(&:gets).chomp
+      else
+        pass = `read -s -p "Password: " pass; echo $pass`.chomp
+      end
+      puts
+      return [name,pass]
     end
   end
 end

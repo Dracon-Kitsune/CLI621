@@ -56,7 +56,7 @@ module E621
       end
       Readline.completer_word_break_characters  = " "
       Readline.completion_append_character      = " "
-      @prompt = "e621.net/post"
+      @prompt = "/post"
     end
     # Run module specific updates, if there are any.
     def mod_update
