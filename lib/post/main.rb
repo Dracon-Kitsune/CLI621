@@ -34,6 +34,9 @@ module E621
         File.open(@paths["tasks"],"w"){|f|f.print "{}"}
       end
       Readline.completion_proc = proc do |s|
+        add = s[0] if s.match(/^\-|\~/)
+        add = s[0,2] if s.match(/^\*_/)
+        s.sub!(/^\-|\~|(\*_)/,"")
         s = Regexp.escape(s)
         words   = ["add","update","download","show","voteup","votedown","fav",\
           "unfav","remove"]
@@ -52,7 +55,10 @@ module E621
         # Here we make all orders in both directions and keep it as just an one
         # dimensional array.
         words  += @tags.map{|t|t["name"]}
-        words.grep(/^#{s}/)
+        words = words.grep(/^#{s}/)
+        words.map!{|w|"#{add}#{w}"}
+        s = "#{add}#{s}"
+        words
       end
       Readline.completer_word_break_characters  = " "
       Readline.completion_append_character      = " "
@@ -62,7 +68,7 @@ module E621
     def mod_update
       File.open(@paths["tags"],"w"){|t|t.print "[]"} if !File.exists?(@paths["tags"])
       diff = Time.now-File.mtime(@paths["tags"])
-      diff = 0 if File.size(@paths["tags"]) <= 2 # Update if tags are empty!
+      diff = 60*60*24*8 if File.size(@paths["tags"]) <= 2 # Update if tags are empty!
       if diff.to_i >= 60*60*24*7 then # Just update if cache is older than a week.
         @threads << Thread.new do
           http = HTTP.new
