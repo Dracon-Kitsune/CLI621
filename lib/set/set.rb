@@ -19,7 +19,9 @@
 
 module E621
   class Set
-    def initialize
+    def initialize(set)
+      @api = API.new("set")
+
     end
   end
 end

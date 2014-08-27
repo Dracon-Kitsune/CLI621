@@ -25,11 +25,21 @@ module E621
       Set.init(@config,@paths)
       Post.init(@config,@paths)
       Readline.completion_proc = proc do |s|
+        words = ["list","listiby post","listby user","listby maintainer"]
+        s = Regexp.escape(s)
+        words.grep(/^#{s}/)
         # A function to get some useful completion feed back should be here.
       end
       Readline.completer_word_break_characters  = " "
       Readline.completion_append_character      = " "
       @prompt = "/pool"
     end
+    # List certain sets.
+    def list(buf)
+      if buf.first == "post" then
+        buf.shift
+      end
+    end
+    alias :listby, :list
   end
 end

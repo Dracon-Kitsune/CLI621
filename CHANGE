@@ -1,3 +1,7 @@
+v0.4
+  + added "-" and "~" to post completion recognition
+  + added a small set of Set completions
+  + added listing of sets
 v0.3
   + pool create/destroy
   + pool add/remove
