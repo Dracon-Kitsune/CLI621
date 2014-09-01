@@ -35,6 +35,7 @@ require "error"
 require "api"
 require "tag"
 require "user"
+require "video"
 
 module E621
   class Main
@@ -54,6 +55,7 @@ module E621
       @tmp        = @debug ? "/tmp/e621.debug" : "/tmp/e621" 
       @mt         = Mutex.new
       @cli        = CLI.new("#@home/history_#@tool")
+      @video      = ARGV.include?("-n") ? Ncurses.new : CLI.new("#@home/history_#@tool")
       @http       = HTTP.new
       @api        = API.new(@tool)
       @paths     = {

@@ -25,12 +25,13 @@ module E621
       passwd = nil
       File.open(paths["pass"]){|f|passwd=f.read.parse}
       @@login,@@cookie = passwd["login"],passwd["cookie"]
+      http = HTTP.new
       name,pass = String.new, String.new
       # Perform a re-login if the last time is older than x days. Or if there is
       # no cookie.
       if (Time.now.to_i-passwd["last_login"].to_i) > 60*60*24*3 || !@@cookie then
         if auto then
-          @http.get("/user/logout",{"cookie"=>@@cookie.to_s}) if @@cookie
+          http.get("/user/logout",{"cookie"=>@@cookie.to_s}) if @@cookie
           if passwd["name"] != "" && passwd["pass"] != "" then
             name,pass = passwd["name"],passwd["pass"]
           else
@@ -43,7 +44,6 @@ module E621
           name,pass = get_credentials
         end
         request = "name=#{name}&password=#{pass}"
-        http = HTTP.new
         body = http.post("/user/login.json",request).parse
         if body.has_key?("success") && (!body["success"] || body["success"] = "failed") then
           raise AuthentificationError, "Username or password wrong!"
@@ -115,7 +115,7 @@ module E621
       return s
     end
     # If there is no data saved for login, ask the user. They must know!
-    def self.get_credentials
+    def get_credentials
       print "Username: "
       name = $stdin.gets.chomp
       if $stdin.respond_to?(:noecho) then

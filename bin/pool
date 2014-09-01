@@ -20,6 +20,7 @@
 
 file = File.symlink?(__FILE__) ? File.readlink(__FILE__) : __FILE__
 $:.unshift(File.dirname(file)+"/../lib")
+
 require "main"
 require "cli"
 require "pool/main"

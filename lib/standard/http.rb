@@ -49,7 +49,7 @@ module E621
     # guaranteed.
     def get(url,hash={})
       head,body = @http.get(url,hash)
-      E621.log.debug("GET #{url}?#{request}: #{body}")
+      E621.log.debug("GET #{url}: #{body}")
       code = head.code.to_i
       if code > 300 then
         body = errorcode(code,url) # Emulate a proper API response!
